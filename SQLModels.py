@@ -1,5 +1,5 @@
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, ForeignKey, Integer, String, Date, Float, Boolean
+from sqlalchemy import Column, ForeignKey, Date, Integer, String, Float, Boolean
 
 Base = declarative_base()
 metadata = Base.metadata
@@ -8,7 +8,7 @@ class Subject(Base):
     __tablename__ = 'subject'
 
     id = Column(Integer, primary_key=True)
-    date = Column(Date)
+    date = Column(Date, nullable=True)
 
     injury = Column(String(250), nullable=True)
     pain = Column(Integer)
@@ -18,8 +18,8 @@ class Subject(Base):
     act = Column(Integer)
     mot = Column(Integer)
 
-    position = Column(String(5), nullable=False)
-    status = Column(String(1), nullable=False)
+    position = Column(String(5), nullable=True)
+    status = Column(String(1), nullable=True)
     size = Column(Float)
     weight = Column(Float)
     fat = Column(Float)
