@@ -4,39 +4,51 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import matplotlib.cm as cmx
 from sqlalchemy import create_engine
-from data_extraction import create_db
 
-db_name = 'data/data.db'
-# create_db(db_name)
-engine = create_engine('sqlite:///' + db_name)
 
-df = pd.read_sql_query("""SELECT
-    height,
-    weight,
-    position   
+def get_subject_metrics():
+    db_name = 'data/data.db'
+    engine = create_engine('sqlite:///' + db_name)
+    df = pd.read_sql_query("""SELECT
+        medical.*,
+        fatigue.*,
+        AVG(handwriting.t0) as t0,
+        AVG(handwriting.D1) as D1,
+        AVG(handwriting.mu1) as mu1,
+        AVG(handwriting.ss1) as ss1,
+        AVG(handwriting.D2) as D2,
+        AVG(handwriting.mu2) as mu2,
+        AVG(handwriting.ss2) as ss2,
+        AVG(handwriting.SNR) as SNR
 
-    FROM 
-    medical NATURAL JOIN fatigue
-    
-    WHERE height is not null and weight is not null
-    """, con=engine.connect())
+        FROM fatigue NATURAL JOIN medical NATURAL JOIN handwriting 
+        GROUP BY handwriting.subject_id
+        """, con=engine.connect())
+    df['avg_fatigue'] = df[['t0', 'D1', 'mu1', 'ss1', 'D2', 'mu2', 'ss2', 'SNR']].mean(axis=1)
 
-# Get unique names of species
-uniq = list(set(df['position']))
+    return df
 
-# Set the color map to match the number of species
-z = range(1, len(uniq))
-hot = plt.get_cmap('hot')
-cNorm = colors.Normalize(vmin=0, vmax=len(uniq))
-scalarMap = cmx.ScalarMappable(norm=cNorm, cmap='Paired')
+def height_weight():
+    df = get_subject_metrics()
 
-# Plot each species
-for i in range(len(uniq)):
-    indx = df['position'] == uniq[i]
-    plt.scatter(df['weight'][indx], df['height'][indx], color=scalarMap.to_rgba(i), label=uniq[i])
+    uniq = list(set(df['position']))
 
-plt.xlabel('Weight (kg)')
-plt.ylabel('Height (cm)')
-plt.title('Height-Weight correlation')
-plt.legend(loc='lower right')
-plt.show()
+    # Set the color map to match the number of positions
+    z = range(1, len(uniq))
+    cNorm = colors.Normalize(vmin=0, vmax=len(uniq))
+    scalarMap = cmx.ScalarMappable(norm=cNorm, cmap='Paired')
+
+
+    # Plot each position
+    for i in range(len(uniq)):
+        indx = df['position'] == uniq[i]
+        plt.scatter(df['weight'][indx], df['height'][indx], color=scalarMap.to_rgba(i), label=uniq[i])
+
+    plt.xlabel('Weight (kg)')
+    plt.ylabel('Height (cm)')
+    plt.title('Height-Weight correlation')
+    plt.legend(loc='lower right')
+    plt.show()
+
+if __name__ == '__main__':
+    height_weight()
