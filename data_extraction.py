@@ -65,8 +65,33 @@ for index, row in df.iterrows():
         asym_drop_box=(row['Asym drop box (X)'] == 'x'),
         asym_tuck_jump=(row['Asym tuck jump (X)'] == 'x'),
         hop_g1=row['HOP G - 1'],
+        hop_g2=row['HOP G - 2'],
+        hop_d1=row['HOP D - 1'],
+        hop_d2=row['HOP D - 2'],
+        hop3_g1=row['3 HOP G - 1'],
+        hop3_g2=row['3 HOP G - 2'],
+        hop3_d1=row['3 HOP D - 1'],
+        hop3_d2=row['3 HOP D - 2'],
+        hop3_cr_g1=row['3 HOP Cr G - 1'],
+        hop3_cr_g2=row['3 HOP Cr G - 2'],
+        hop3_cr_d1=row['3 HOP Cr D - 1'],
+        hop3_cr_d2=row['3 HOP Cr D - 2'],
+        re_gh_g1=row['RE GH G - 1'],
+        re_gh_g2=row['RE GH G - 2'],
+        re_gh_d1=row['RE GH D - 1'],
+        re_gh_d2=row['RE GH D - 2'],
+        flex_g1=row['FLEX G -1'],
+        flex_g2=row['FLEX G - 2'],
+        flex_d1=row['FLEX D - 1'],
+        flex_d2=row['FLEX D - 2'],
+        scap_g1=row['SCAP G - 1'],
+        scap_g2=row['SCAP G - 2'],
+        scap_d1=row['SCAP D - 1'],
+        scap_d2=row['SCAP D - 2'],
     )
     session.merge(subject)  # no error if already exists
     session.add(medical)
 
 session.commit()
+
+# validate and filter
