@@ -1,13 +1,22 @@
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy import Column, ForeignKey, Date, Integer, String, Float, Boolean
+from sqlalchemy.orm import relationship
+
 
 Base = declarative_base()
 metadata = Base.metadata
+
 
 class Subject(Base):
     __tablename__ = 'subject'
 
     id = Column(Integer, primary_key=True)
+
+
+class Fatigue(Base):
+    __tablename__ = 'fatigue'
+
+    id = Column(Integer, ForeignKey('subject.id'), primary_key=True)
     date = Column(Date, nullable=True)
 
     injury = Column(String(250), nullable=True)
@@ -18,14 +27,20 @@ class Subject(Base):
     act = Column(Integer)
     mot = Column(Integer)
 
+
+class Medical(Base):
+    __tablename__ = 'medical'
+
+    id = Column(Integer, ForeignKey('subject.id'), primary_key=True)
+    # TODO make nullable false
     position = Column(String(5), nullable=True)
     status = Column(String(1), nullable=True)
-    size = Column(Float)
+    height = Column(Float)
     weight = Column(Float)
     fat = Column(Float)
     arm_length = Column(Float)
     asym_drop_box = Column(Boolean)
-    asym_tuck_box = Column(Boolean)
+    asym_tuck_jump = Column(Boolean)
     hop_g1 = Column(Float)
     hop_g2 = Column(Float)
     hop_d1 = Column(Float)
