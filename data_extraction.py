@@ -5,7 +5,7 @@ import pandas as pd
 import os
 import math
 
-math
+
 def value_or_null(df, row, col):
     value = df.iat[row, col]
     if isinstance(value, float) and math.isnan(value):
@@ -15,7 +15,7 @@ def value_or_null(df, row, col):
 
 
 # import fatigue data
-def extract_fatigue(filename='data/Questionnaires_IMF.xlsx'):
+def extract_fatigue(session, filename='data/Questionnaires_IMF.xlsx'):
     xl = pd.ExcelFile(filename)
 
     for sheet in xl.sheet_names:
@@ -40,7 +40,7 @@ def extract_fatigue(filename='data/Questionnaires_IMF.xlsx'):
 
 
 # import medical data
-def extract_medical(filename='data/#_test médicaux carabins fév 2019.xlsx'):
+def extract_medical(session, filename='data/#_test médicaux carabins fév 2019.xlsx'):
     xl = pd.ExcelFile(filename)
     df = xl.parse('Feuil1', header=3)
     for index, row in df.iterrows():
@@ -88,7 +88,7 @@ def extract_medical(filename='data/#_test médicaux carabins fév 2019.xlsx'):
 
 
 # validate and filter
-def validate(remove_null_fatigue=True):
+def validate(session, remove_null_fatigue=True):
     fatigue_table = metadata.tables['fatigue']
 
     if remove_null_fatigue:
@@ -99,21 +99,26 @@ def validate(remove_null_fatigue=True):
             fatigue_table.c.act == None,
             fatigue_table.c.mot == None,
         ))  # is None won't work
-        engine.execute(d)
+        session.execute(d)
 
 
-dbName = 'data/data.db'
+def create_db(db_name='data/data.db'):
+    # delete existing db
+    if os.path.exists(db_name):
+        os.remove(db_name)
 
-# delete existing db
-if os.path.exists(dbName):
-    os.remove(dbName)
+    engine = create_engine('sqlite:///' + db_name)
+    metadata.create_all(engine)
+    Session = sessionmaker(bind=engine)
+    session = Session()
 
-meta = MetaData()
-engine = create_engine('sqlite:///' + dbName)
-metadata.create_all(engine)
-Session = sessionmaker(bind=engine)
-session = Session()
+    extract_fatigue(session)
+    extract_medical(session)
+    validate(session)
+    session.close()
 
-extract_fatigue()
-extract_medical()
-validate()
+    return engine
+
+
+if __name__ == '__main__':
+    create_db()
