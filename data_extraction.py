@@ -20,7 +20,7 @@ def extract_fatigue(session, filename='data/Questionnaires_IMF.xlsx'):
 
     for sheet in xl.sheet_names:
         subject_id = sheet
-        df = xl.parse(sheet)
+        df = xl.parse(sheet, header=None)
         subject = Subject(id=subject_id)
         fatigue = Fatigue(
             id=subject_id,
@@ -45,6 +45,8 @@ def extract_medical(session, filename='data/#_test médicaux carabins fév 2019.
     df = xl.parse('Feuil1', header=3)
     for index, row in df.iterrows():
         subject_id = row['#']
+        if not isinstance(subject_id, int):
+            break
         subject = Subject(id=subject_id)
         medical = Medical(
             id=row['#'],
