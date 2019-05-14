@@ -38,8 +38,6 @@ def extract_fatigue(session, filename='data/Questionnaires_IMF.xlsx'):
         session.add(fatigue)
 
     session.commit()
-    rows = session.query(Fatigue).count()
-    print("Extracted " + str(rows) + " fatigue tests")
 
 
 # import medical data
@@ -90,8 +88,6 @@ def extract_medical(session, filename='data/#_test médicaux carabins fév 2019.
         session.add(medical)
 
     session.commit()
-    rows = session.query(Medical).count()
-    print("Extracted " + str(rows) + " medical tests")
 
 
 def extract_handwriting(session, path='data/Delta_carabins'):
@@ -123,15 +119,14 @@ def extract_handwriting(session, path='data/Delta_carabins'):
             )
             session.add(handwriting)
     session.commit()
-    rows = session.query(Handwriting).group_by('subject_id').count()
-    print("Extracted " + str(rows) + " handwriting tests")
 
 
 # validate and filter
-def validate(session, remove_null_fatigue=True):
+def validate(session, null_fatigue=True, null_medical=True, null_handwriting=True, low_snr=True, bad_distance=True,
+             d1_d2=True):
     fatigue_table = metadata.tables['fatigue']
 
-    if remove_null_fatigue:
+    if null_fatigue:
         d = fatigue_table.delete().where(or_(
             fatigue_table.c.gen == None,
             fatigue_table.c.phys == None,
@@ -140,6 +135,23 @@ def validate(session, remove_null_fatigue=True):
             fatigue_table.c.mot == None,
         ))  # is None won't work
         session.execute(d)
+
+    if null_medical:
+        session.execute("DELETE FROM medical WHERE height is NULL")
+
+    if null_handwriting:
+        session.execute("DELETE FROM handwriting WHERE t0 is NULL")
+
+    if low_snr:
+        session.execute("DELETE FROM handwriting WHERE SNR < 15")
+
+    if bad_distance:
+        session.execute("DELETE FROM handwriting WHERE (D1-D2) < 125 OR (D1-D2) > 250")
+
+    if d1_d2:
+        session.execute("DELETE FROM handwriting WHERE D1>500 OR D2>500")
+
+    session.commit()
 
 
 def create_db(db_name='data/data.db'):
@@ -156,6 +168,14 @@ def create_db(db_name='data/data.db'):
     extract_medical(session)
     extract_handwriting(session)
     validate(session)
+
+    handwriting_rows = session.query(Handwriting).group_by('subject_id').count()
+    print("Extracted " + str(handwriting_rows) + " valid handwriting tests")
+    medical_rows = session.query(Medical).count()
+    print("Extracted " + str(medical_rows) + " valid medical tests")
+    fatigue_rows = session.query(Fatigue).count()
+    print("Extracted " + str(fatigue_rows) + " valid fatigue tests")
+
     session.close()
 
     return engine
