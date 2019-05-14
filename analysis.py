@@ -25,7 +25,7 @@ def get_subject_metrics():
         FROM fatigue NATURAL JOIN medical NATURAL JOIN handwriting 
         GROUP BY handwriting.subject_id
         """, con=engine.connect())
-    df['avg_fatigue'] = df[['t0', 'D1', 'mu1', 'ss1', 'D2', 'mu2', 'ss2', 'SNR']].mean(axis=1)
+    df['avg_fatigue'] = df[['gen', 'phys', 'men', 'act', 'mot']].mean(axis=1)
 
     return df
 
@@ -77,7 +77,7 @@ def injury_analysis():
     df['injured'] = np.where(np.equal(df['injury'], None), 'sain', 'blessé')
     for i, variable in enumerate(['t0', 'SNR', 'avg_fatigue', 'D1']):
         plt.subplot(2, 2, i+1)
-        ax = sns.violinplot(x='injured', y=variable, data=df)
+        ax = sns.violinplot(x='injured', y=variable, data=df, inner='point', cut=0, bw='silverman')
         ax.set_xlabel("")
     plt.show()
 
