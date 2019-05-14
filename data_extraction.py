@@ -1,8 +1,9 @@
 from sqlalchemy import MetaData, create_engine, or_
 from sqlalchemy.orm import sessionmaker
-from SQLModels import metadata, Subject, Fatigue, Medical
+from SQLModels import metadata, Subject, Fatigue, Medical, Handwriting
 import pandas as pd
 import os
+import re
 import math
 
 
@@ -23,7 +24,7 @@ def extract_fatigue(session, filename='data/Questionnaires_IMF.xlsx'):
         df = xl.parse(sheet, header=None)
         subject = Subject(id=subject_id)
         fatigue = Fatigue(
-            id=subject_id,
+            subject_id=subject_id,
             date=value_or_null(df, 0, 3),
             injury=value_or_null(df, 2, 3),
             pain=value_or_null(df, 3, 3),
@@ -33,10 +34,12 @@ def extract_fatigue(session, filename='data/Questionnaires_IMF.xlsx'):
             act=value_or_null(df, 26, 5),
             mot=value_or_null(df, 26, 6),
         )
-        session.add(subject)
+        session.merge(subject)  # no error if already exists
         session.add(fatigue)
 
     session.commit()
+    rows = session.query(Fatigue).count()
+    print("Extracted " + str(rows) + " fatigue tests")
 
 
 # import medical data
@@ -49,7 +52,7 @@ def extract_medical(session, filename='data/#_test médicaux carabins fév 2019.
             break
         subject = Subject(id=subject_id)
         medical = Medical(
-            id=row['#'],
+            subject_id=row['#'],
             position=row['POSITION'],
             status=row['STATU'],
             height=row['Taille (cm)'],
@@ -87,6 +90,41 @@ def extract_medical(session, filename='data/#_test médicaux carabins fév 2019.
         session.add(medical)
 
     session.commit()
+    rows = session.query(Medical).count()
+    print("Extracted " + str(rows) + " medical tests")
+
+
+def extract_handwriting(session, path='data/Delta_carabins'):
+    delta_dir = os.path.join(path, 'Delta')
+    filenames = os.listdir(delta_dir)  # get all files' and folders' names
+    for name in filenames:  # loop through all the files and folders
+        m = re.search('(?<=_)(\d+)(?=_)', name)
+        subject_id = int(m.group(0))
+        subject_dir = os.path.join(delta_dir, name)
+        if not os.path.isdir(subject_dir):
+            break
+        excel_path = os.path.join(subject_dir, "xlsx/Traits_rapides_reaction_visuelle_simple.xlsx")
+        subject = Subject(id=subject_id)
+        session.merge(subject)  # no error if already exists
+        xl = pd.ExcelFile(excel_path)
+        df = xl.parse()
+        for index, row in df.iterrows():
+            handwriting = Handwriting(
+                subject_id=subject_id,
+                test_id=index,
+                t0=row['t0'],
+                D1=row['D1'],
+                mu1=row['mu1'],
+                ss1=row['ss1'],
+                D2=row['D2'],
+                mu2=row['mu2'],
+                ss2=row['ss2'],
+                SNR=row['SNR'],
+            )
+            session.add(handwriting)
+    session.commit()
+    rows = session.query(Handwriting).group_by('subject_id').count()
+    print("Extracted " + str(rows) + " handwriting tests")
 
 
 # validate and filter
@@ -116,6 +154,7 @@ def create_db(db_name='data/data.db'):
 
     extract_fatigue(session)
     extract_medical(session)
+    extract_handwriting(session)
     validate(session)
     session.close()
 

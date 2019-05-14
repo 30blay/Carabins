@@ -1,5 +1,5 @@
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, ForeignKey, Date, Integer, String, Float, Boolean
+from sqlalchemy import Column, ForeignKey, Date, Integer, String, Float, Boolean, PrimaryKeyConstraint
 from sqlalchemy.orm import relationship
 
 
@@ -16,7 +16,7 @@ class Subject(Base):
 class Fatigue(Base):
     __tablename__ = 'fatigue'
 
-    id = Column(Integer, ForeignKey('subject.id'), primary_key=True)
+    subject_id = Column(Integer, ForeignKey('subject.id'), primary_key=True)
     date = Column(Date, nullable=True)
 
     injury = Column(String(250), nullable=True)
@@ -31,7 +31,7 @@ class Fatigue(Base):
 class Medical(Base):
     __tablename__ = 'medical'
 
-    id = Column(Integer, ForeignKey('subject.id'), primary_key=True)
+    subject_id = Column(Integer, ForeignKey('subject.id'), primary_key=True)
     # TODO make nullable false
     position = Column(String(5), nullable=True)
     status = Column(String(1), nullable=True)
@@ -66,3 +66,18 @@ class Medical(Base):
     scap_d1 = Column(Float)
     scap_d2 = Column(Float)
 
+
+class Handwriting(Base):
+    __tablename__ = 'handwriting'
+
+    subject_id = Column(Integer, ForeignKey('subject.id'))
+    test_id = Column(Integer)
+    PrimaryKeyConstraint(subject_id, test_id)
+    t0 = Column(Float)
+    D1 = Column(Float)
+    mu1 = Column(Float)
+    ss1 = Column(Float)
+    D2 = Column(Float)
+    mu2 = Column(Float)
+    ss2 = Column(Float)
+    SNR = Column(Float)
