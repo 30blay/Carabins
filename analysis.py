@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as colors
 import matplotlib.cm as cmx
 from sqlalchemy import create_engine
+import numpy as np
 
 db_name = 'data/data.db'
 
@@ -71,7 +72,18 @@ def handwriting_test_count_dist():
     plt.show()
 
 
+def injury_analysis():
+    df = get_subject_metrics()
+    df['injured'] = np.where(np.equal(df['injury'], None), 'sain', 'blessé')
+    for i, variable in enumerate(['t0', 'SNR', 'avg_fatigue', 'D1']):
+        plt.subplot(2, 2, i+1)
+        ax = sns.violinplot(x='injured', y=variable, data=df)
+        ax.set_xlabel("")
+    plt.show()
+
+
 if __name__ == '__main__':
     height_weight()
     fatigue_handwriting_relationship()
     handwriting_test_count_dist()
+    injury_analysis()
