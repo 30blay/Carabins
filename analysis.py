@@ -28,16 +28,15 @@ def get_subject_metrics():
 
     return df
 
+
 def height_weight():
     df = get_subject_metrics()
 
     uniq = list(set(df['position']))
 
     # Set the color map to match the number of positions
-    z = range(1, len(uniq))
     cNorm = colors.Normalize(vmin=0, vmax=len(uniq))
     scalarMap = cmx.ScalarMappable(norm=cNorm, cmap='Paired')
-
 
     # Plot each position
     for i in range(len(uniq)):
@@ -50,5 +49,19 @@ def height_weight():
     plt.legend(loc='lower right')
     plt.show()
 
+
+def fatigue_handwriting_relationship():
+    df = get_subject_metrics()
+    sns.pairplot(df[[
+        'gen',
+        'phys',
+        'mot',
+        't0',
+        'SNR',
+    ]])
+    plt.show()
+
+
 if __name__ == '__main__':
     height_weight()
+    fatigue_handwriting_relationship()
