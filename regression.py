@@ -1,23 +1,33 @@
 from analysis import get_subject_metrics
 from sklearn.model_selection import train_test_split
-from sklearn import svm
+from sklearn import svm, linear_model
 from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.preprocessing import StandardScaler
+from sklearn.model_selection import cross_validate
+from sklearn.pipeline import make_pipeline
 
 df = get_subject_metrics()
 X = df[['t0', 'D1', 'mu1', 'ss1', 'D2', 'mu2', 'ss2', 'SNR']]
 y = df['avg_fatigue']
+scoring=[
+    'r2',
+    'neg_mean_absolute_error',
+]
 
 scaler = StandardScaler()
 scaler.fit(X)
 X = scaler.transform(X)
 
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, random_state=42)
+models = [
+    linear_model.Ridge(),
+    linear_model.Lasso(),
+    linear_model.SGDRegressor(),
+    svm.SVR(gamma='auto'),
+]
 
-svr = svm.SVR(kernel='linear')
-svr.fit(X_train, y_train)
-y_pred = svr.predict(X_test)
-print("Mean squared error: %.2f", mean_squared_error(y_test, y_pred))
-# Explained variance score: 1 is perfect prediction
-print('Variance score: %.2f', r2_score(y_test, y_pred))
+for model in models:
+    cv_results = cross_validate(model, X, y, cv=3, scoring=scoring, return_train_score=True)
+    print(model.__class__)
+    print(cv_results['test_r2'].mean())
+
 
