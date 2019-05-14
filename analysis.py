@@ -5,9 +5,9 @@ import matplotlib.colors as colors
 import matplotlib.cm as cmx
 from sqlalchemy import create_engine
 
+db_name = 'data/data.db'
 
 def get_subject_metrics():
-    db_name = 'data/data.db'
     engine = create_engine('sqlite:///' + db_name)
     df = pd.read_sql_query("""SELECT
         medical.*,
@@ -62,6 +62,16 @@ def fatigue_handwriting_relationship():
     plt.show()
 
 
+def handwriting_test_count_dist():
+    engine = create_engine('sqlite:///' + db_name)
+    df = pd.read_sql_query("""
+        SELECT subject_id, count(test_id) FROM handwriting GROUP BY subject_id
+            """, con=engine.connect())
+    sns.distplot(df['count(test_id)']).set_title('Distribution of the number of handwriting tests')
+    plt.show()
+
+
 if __name__ == '__main__':
     height_weight()
     fatigue_handwriting_relationship()
+    handwriting_test_count_dist()
