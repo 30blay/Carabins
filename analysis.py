@@ -71,7 +71,18 @@ def fatigue_handwriting_relationship():
 
 def delta_log_params_relationship():
     df = get_subject_metrics()
-    sns.pairplot(df[['t0', 'D1', 'mu1', 'ss1', 'D2', 'mu2', 'ss2', 'SNR']].dropna())
+    sns.pairplot(df[['t0', 'D1', 'mu1', 'ss1', 'D2', 'mu2', 'ss2', 'SNR']], dropna=True)
+    plt.show()
+
+
+def delta_log_params_relationship_all_tries():
+    engine = create_engine('sqlite:///' + db_name)
+
+    df = pd.read_sql_query("""SELECT
+        t0, D1, mu1, ss1, D2, mu2, ss2, SNR
+        FROM handwriting
+        """, con=engine.connect())
+    sns.pairplot(df[['t0', 'D1', 'mu1', 'ss1', 'D2', 'mu2', 'ss2', 'SNR']], dropna=True)
     plt.show()
 
 
@@ -102,9 +113,10 @@ def movement_amplitude():
 
 
 if __name__ == '__main__':
-    height_weight()
-    fatigue_handwriting_relationship()
-    delta_log_params_relationship()
-    handwriting_test_count_dist()
-    injury_analysis()
-    movement_amplitude()
+    # height_weight()
+    # fatigue_handwriting_relationship()
+    # delta_log_params_relationship()
+    delta_log_params_relationship_all_tries()
+    # handwriting_test_count_dist()
+    # injury_analysis()
+    # movement_amplitude()
