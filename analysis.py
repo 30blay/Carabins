@@ -63,6 +63,12 @@ def fatigue_handwriting_relationship():
     plt.show()
 
 
+def delta_log_params_relationship():
+    df = get_subject_metrics()
+    sns.pairplot(df[['t0', 'D1', 'mu1', 'ss1', 'D2', 'mu2', 'ss2', 'SNR']])
+    plt.show()
+
+
 def handwriting_test_count_dist():
     engine = create_engine('sqlite:///' + db_name)
     df = pd.read_sql_query("""
@@ -85,5 +91,6 @@ def injury_analysis():
 if __name__ == '__main__':
     height_weight()
     fatigue_handwriting_relationship()
+    delta_log_params_relationship()
     handwriting_test_count_dist()
     injury_analysis()
