@@ -121,8 +121,8 @@ def extract_handwriting(session, path='data/Delta_carabins'):
     session.commit()
 
 
-def apply_filters(session, null_fatigue=True, null_medical=True, null_handwriting=True, low_snr=True, bad_distance=True,
-                  d1_d2=True, min_num_tests=True):
+def apply_filters(session, null_fatigue=False, null_medical=False, null_handwriting=False, low_snr=False, mov_amplitude=False,
+                  d1_d2_max=True, min_num_tests=True):
     fatigue_table = metadata.tables['fatigue']
 
     if null_fatigue:
@@ -144,10 +144,10 @@ def apply_filters(session, null_fatigue=True, null_medical=True, null_handwritin
     if low_snr:
         session.execute("DELETE FROM handwriting WHERE SNR < 15")
 
-    if bad_distance:
+    if mov_amplitude:
         session.execute("DELETE FROM handwriting WHERE (D1-D2) < 125 OR (D1-D2) > 250")
 
-    if d1_d2:
+    if d1_d2_max:
         session.execute("DELETE FROM handwriting WHERE D1>500 OR D2>500")
 
     if min_num_tests:
@@ -170,7 +170,15 @@ def create_db(db_name='data/data.db'):
     extract_fatigue(session)
     extract_medical(session)
     extract_handwriting(session)
-    apply_filters(session)
+    apply_filters(session,
+                  null_fatigue=True,
+                  null_handwriting=True,
+                  null_medical=True,
+                  low_snr=True,
+                  d1_d2_max=True,
+                  mov_amplitude=True,
+                  min_num_tests=True,
+                  )
 
     handwriting_rows = session.query(Handwriting).group_by('subject_id').count()
     print("Extracted " + str(handwriting_rows) + " valid handwriting tests")

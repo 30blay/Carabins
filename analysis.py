@@ -8,9 +8,12 @@ import numpy as np
 
 db_name = 'data/data.db'
 
+
 def get_subject_metrics():
     engine = create_engine('sqlite:///' + db_name)
+
     df = pd.read_sql_query("""SELECT
+        id,
         medical.*,
         fatigue.*,
         AVG(handwriting.t0) as t0,
@@ -22,7 +25,10 @@ def get_subject_metrics():
         AVG(handwriting.ss2) as ss2,
         AVG(handwriting.SNR) as SNR
 
-        FROM fatigue NATURAL JOIN medical NATURAL JOIN handwriting 
+        FROM subject 
+        LEFT JOIN medical on id=medical.subject_id 
+        LEFT JOIN handwriting on id=handwriting.subject_id 
+        LEFT JOIN fatigue on id=fatigue.subject_id
         GROUP BY handwriting.subject_id
         """, con=engine.connect())
     df['avg_fatigue'] = df[['gen', 'phys', 'men', 'act', 'mot']].mean(axis=1)
@@ -59,13 +65,13 @@ def fatigue_handwriting_relationship():
         'mot',
         't0',
         'SNR',
-    ]])
+    ]].dropna())
     plt.show()
 
 
 def delta_log_params_relationship():
     df = get_subject_metrics()
-    sns.pairplot(df[['t0', 'D1', 'mu1', 'ss1', 'D2', 'mu2', 'ss2', 'SNR']])
+    sns.pairplot(df[['t0', 'D1', 'mu1', 'ss1', 'D2', 'mu2', 'ss2', 'SNR']].dropna())
     plt.show()
 
 
