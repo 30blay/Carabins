@@ -6,10 +6,10 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import cross_validate
 from sklearn.pipeline import make_pipeline
 
-df = get_subject_metrics()
+df = get_subject_metrics()[['t0', 'D1', 'mu1', 'ss1', 'D2', 'mu2', 'ss2', 'SNR', 'avg_fatigue']].dropna()
 X = df[['t0', 'D1', 'mu1', 'ss1', 'D2', 'mu2', 'ss2', 'SNR']]
 y = df['avg_fatigue']
-scoring=[
+scoring = [
     'r2',
     'neg_mean_absolute_error',
 ]
