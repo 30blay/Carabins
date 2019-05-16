@@ -88,9 +88,17 @@ def injury_analysis():
     plt.show()
 
 
+def movement_amplitude():
+    df = get_subject_metrics()
+    df['amplitude'] = df['D1'] - df['D2']
+    sns.distplot(df['amplitude'].dropna()).set_title('Distribution of the movement amplitude')
+    plt.show()
+
+
 if __name__ == '__main__':
     height_weight()
     fatigue_handwriting_relationship()
     delta_log_params_relationship()
     handwriting_test_count_dist()
     injury_analysis()
+    movement_amplitude()
