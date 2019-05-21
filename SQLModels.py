@@ -13,6 +13,13 @@ class Subject(Base):
     subject_id = Column(Integer, primary_key=True)
 
 
+# Cette table regroupe les réponse des sujets à des formulaires standards MFI (Multidimentional Fatigue Inventory)
+# pain: douleur sur une échelle de 1 à 10
+# gen : fatigue générale
+# phys : fatigue physique
+# men : fatigue mentale
+# mot : motivation réduite
+# act : activités réduites
 class Fatigue(Base):
     __tablename__ = 'fatigue'
 
