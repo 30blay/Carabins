@@ -10,13 +10,13 @@ metadata = Base.metadata
 class Subject(Base):
     __tablename__ = 'subject'
 
-    id = Column(Integer, primary_key=True)
+    subject_id = Column(Integer, primary_key=True)
 
 
 class Fatigue(Base):
     __tablename__ = 'fatigue'
 
-    subject_id = Column(Integer, ForeignKey('subject.id'), primary_key=True)
+    subject_id = Column(Integer, ForeignKey('subject.subject_id'), primary_key=True)
     date = Column(Date, nullable=True)
 
     injury = Column(String(250), nullable=True)
@@ -31,7 +31,7 @@ class Fatigue(Base):
 class Medical(Base):
     __tablename__ = 'medical'
 
-    subject_id = Column(Integer, ForeignKey('subject.id'), primary_key=True)
+    subject_id = Column(Integer, ForeignKey('subject.subject_id'), primary_key=True)
     # TODO make nullable false
     position = Column(String(5), nullable=True)
     status = Column(String(1), nullable=True)
@@ -70,7 +70,7 @@ class Medical(Base):
 class Handwriting(Base):
     __tablename__ = 'handwriting'
 
-    subject_id = Column(Integer, ForeignKey('subject.id'))
+    subject_id = Column(Integer, ForeignKey('subject.subject_id'))
     test_id = Column(Integer)
     PrimaryKeyConstraint(subject_id, test_id)
     t0 = Column(Float)

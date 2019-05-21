@@ -13,7 +13,7 @@ def get_subject_metrics():
     engine = create_engine('sqlite:///' + db_name)
 
     df = pd.read_sql_query("""SELECT
-        id,
+        subject_id as id,
         medical.*,
         fatigue.*,
         AVG(handwriting.t0) as t0,
@@ -26,12 +26,13 @@ def get_subject_metrics():
         AVG(handwriting.SNR) as SNR
 
         FROM subject 
-        LEFT JOIN medical on id=medical.subject_id 
-        LEFT JOIN handwriting on id=handwriting.subject_id 
-        LEFT JOIN fatigue on id=fatigue.subject_id
-        GROUP BY handwriting.subject_id
+        LEFT JOIN medical USING (subject_id)
+        LEFT JOIN handwriting USING (subject_id)
+        LEFT JOIN fatigue USING (subject_id)
+        GROUP BY subject_id
         """, con=engine.connect())
     df['avg_fatigue'] = df[['gen', 'phys', 'men', 'act', 'mot']].mean(axis=1)
+    df.drop(columns="subject_id", inplace=True)
 
     return df
 

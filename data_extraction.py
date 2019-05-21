@@ -22,7 +22,7 @@ def extract_fatigue(session, filename='data/Questionnaires_IMF.xlsx'):
     for sheet in xl.sheet_names:
         subject_id = sheet
         df = xl.parse(sheet, header=None)
-        subject = Subject(id=subject_id)
+        subject = Subject(subject_id=subject_id)
         fatigue = Fatigue(
             subject_id=subject_id,
             date=value_or_null(df, 0, 3),
@@ -48,7 +48,7 @@ def extract_medical(session, filename='data/#_test médicaux carabins fév 2019.
         subject_id = row['#']
         if not isinstance(subject_id, int):
             break
-        subject = Subject(id=subject_id)
+        subject = Subject(subject_id=subject_id)
         medical = Medical(
             subject_id=row['#'],
             position=row['POSITION'],
@@ -100,7 +100,7 @@ def extract_handwriting(session, path='data/Delta_carabins'):
         if not os.path.isdir(subject_dir):
             break
         excel_path = os.path.join(subject_dir, "xlsx/Traits_rapides_reaction_visuelle_simple.xlsx")
-        subject = Subject(id=subject_id)
+        subject = Subject(subject_id=subject_id)
         session.merge(subject)  # no error if already exists
         xl = pd.ExcelFile(excel_path)
         df = xl.parse()
