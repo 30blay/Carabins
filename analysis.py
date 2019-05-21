@@ -112,11 +112,26 @@ def movement_amplitude():
     plt.show()
 
 
+def delta_log_linear_regressions():
+    df = get_subject_metrics()
+    corr = df[['t0', 'D1', 'mu1', 'ss1', 'D2', 'mu2', 'ss2', 'SNR']].corr()
+    ax1 = sns.heatmap(corr, annot=True, cbar=False, square=True)
+    ax1.set_title("R correlation coefficient on subject averages")
+    plt.show()
+
+    engine = create_engine('sqlite:///' + db_name)
+    df = pd.read_sql_query("SELECT t0, D1, mu1, ss1, D2, mu2, ss2, SNR FROM handwriting", con=engine.connect())
+    ax2 = sns.heatmap(df.corr(), annot=True, cbar=False, square=True)
+    ax2.set_title("R correlation coefficient on individual tries")
+    plt.show()
+
+
 if __name__ == '__main__':
     # height_weight()
     # fatigue_handwriting_relationship()
     # delta_log_params_relationship()
-    delta_log_params_relationship_all_tries()
+    # delta_log_params_relationship_all_tries()
     # handwriting_test_count_dist()
     # injury_analysis()
     # movement_amplitude()
+    delta_log_linear_regressions()
