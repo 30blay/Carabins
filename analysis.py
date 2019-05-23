@@ -7,8 +7,7 @@ from sqlalchemy import create_engine
 import numpy as np
 from scipy import stats
 from scipy.stats import shapiro, normaltest, norm, lognorm, kstest
-
-db_name = 'data/data_carabins.db'
+from data_extraction import db_name
 
 
 def get_subject_metrics():
@@ -187,7 +186,8 @@ def handwriting_stddev_analysis():
     df = pd.merge(hw_std, metrics, on='id')
     sns.heatmap(df[['t0_std', 'D1_std', 'mu1_std', 'ss1_std', 'D2_std', 'mu2_std', 'ss2_std', 'SNR_std']].corr(), annot=True, cbar=False, square=True)
     plt.show()
-
+    sns.pairplot(df[['t0_std', 'D1_std', 'mu1_std', 'ss1_std', 'D2_std', 'mu2_std', 'ss2_std', 'SNR_std']])
+    plt.show()
 
 def normality_test():
     alpha = 0.1
@@ -233,6 +233,6 @@ if __name__ == '__main__':
     # movement_amplitude()
     # delta_log_linear_regressions()
     # delta_log_params_distribution_all_tries()
-    # handwriting_stddev_analysis()
+    handwriting_stddev_analysis()
     # normality_test()
-    medical_outliers()
+    # medical_outliers()

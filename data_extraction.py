@@ -10,6 +10,8 @@ import math
 medical_traits = ['arm_length', 'asym_drop_box', 'asym_tuck_jump', 'hop_g1', 'hop_g2', 'hop_d1', 'hop_d2', 'hop3_g1', 'hop3_g2', 'hop3_d1', 'hop3_d2', 'hop3_cr_g1', 'hop3_cr_g2', 'hop3_cr_d1', 'hop3_cr_d2', 're_gh_g1', 're_gh_g2', 're_gh_d1', 're_gh_d2', 'flex_g1', 'flex_g2', 'flex_d1', 'flex_d2', 'scap_g1', 'scap_g2', 'scap_d1', 'scap_d2']
 delta_log_params = ['t0', 'D1', 'mu1', 'ss1', 'D2', 'mu2', 'ss2', 'SNR']
 
+db_name = 'data/data_carabins.db'
+
 
 def value_or_null(df, row, col):
     value = df.iat[row, col]
@@ -161,7 +163,7 @@ def apply_filters(session, null_fatigue=False, null_medical=False, null_handwrit
     session.commit()
 
 
-def create_db(db_name='data/data.db'):
+def create_db(db_name='data/carabins_data.db'):
     # delete existing db
     if os.path.exists(db_name):
         os.remove(db_name)
@@ -197,4 +199,4 @@ def create_db(db_name='data/data.db'):
 
 
 if __name__ == '__main__':
-    create_db()
+    create_db(db_name)
