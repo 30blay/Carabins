@@ -5,8 +5,9 @@ import matplotlib.colors as colors
 import matplotlib.cm as cmx
 from sqlalchemy import create_engine
 import numpy as np
+from scipy.stats import shapiro, normaltest, norm, lognorm, kstest
 
-db_name = 'data/data.db'
+db_name = 'data/data_carabins.db'
 
 
 def get_subject_metrics():
@@ -33,6 +34,47 @@ def get_subject_metrics():
         """, con=engine.connect())
     df['avg_fatigue'] = df[['gen', 'phys', 'men', 'act', 'mot']].mean(axis=1)
     df.drop(columns="subject_id", inplace=True)
+
+    return df
+
+
+def get_handwriting_stddev():
+    engine = create_engine('sqlite:///' + db_name)
+
+    df = pd.read_sql_query("""SELECT
+        subject_id AS id,
+        t0 ,
+        D1 ,
+        mu1,
+        ss1,
+        D2 ,
+        mu2,
+        ss2,
+        SNR
+        FROM handwriting
+        """, con=engine.connect())
+
+    df = df.groupby('id').agg(
+        {
+            't0': 'std',
+            'D1': 'std',
+            'mu1': 'std',
+            'ss1': 'std',
+            'D2': 'std',
+            'mu2': 'std',
+            'ss2': 'std',
+            'SNR': 'std',
+        }
+    ).rename(columns={
+        't0': 't0_std',
+        'D1': 'D1_std',
+        'mu1': 'mu1_std',
+        'ss1': 'ss1_std',
+        'D2': 'D2_std',
+        'mu2': 'mu2_std',
+        'ss2': 'ss2_std',
+        'SNR': 'SNR_std',
+    })
 
     return df
 
@@ -87,6 +129,17 @@ def delta_log_params_relationship_all_tries():
     plt.show()
 
 
+def delta_log_params_distribution_all_tries():
+    engine = create_engine('sqlite:///' + db_name)
+
+    df = pd.read_sql_query("""SELECT
+        subject_id, t0, D1, mu1, ss1, D2, mu2, ss2, SNR
+        FROM handwriting
+        """, con=engine.connect())
+    sns.violinplot(y=df['t0'], x=df['subject_id'])
+    plt.show()
+
+
 def handwriting_test_count_dist():
     engine = create_engine('sqlite:///' + db_name)
     df = pd.read_sql_query("""
@@ -127,6 +180,38 @@ def delta_log_linear_regressions():
     plt.show()
 
 
+def handwriting_stddev_analysis():
+    metrics = get_subject_metrics()
+    hw_std = get_handwriting_stddev()
+    df = pd.merge(hw_std, metrics, on='id')
+    sns.heatmap(df[['t0_std', 'D1_std', 'mu1_std', 'ss1_std', 'D2_std', 'mu2_std', 'ss2_std', 'SNR_std']].corr(), annot=True, cbar=False, square=True)
+    plt.show()
+
+
+def normality_test():
+    alpha = 0.1
+    df = get_subject_metrics()
+    for tested_var_name in ['t0', 'D1', 'mu1', 'ss1', 'D2', 'mu2', 'ss2', 'SNR']:
+        print(tested_var_name)
+        tested_data = df[tested_var_name].dropna()
+
+        # normal_distribution
+        sns.distplot(tested_data)
+        plt.show()
+        statistic, p = kstest(tested_data, "norm", norm.fit(tested_data))
+        if p < alpha:  # null hypothesis: x comes from a normal distribution
+            print(tested_var_name + " is not normally distributed (p = {:g})".format(p))
+        else:
+            print(tested_var_name + " may be normally distributed (p = {:g})".format(p))
+
+        # lognormal distribution
+        statistic, log_p = kstest(tested_data, "lognorm", lognorm.fit(tested_data))
+        if log_p < alpha:  # null hypothesis: x comes from a normal distribution
+            print(tested_var_name + " is not lognormally distributed (p = {:g})".format(log_p))
+        else:
+            print(tested_var_name + " may be lognormally distributed (p = {:g})".format(log_p))
+
+
 if __name__ == '__main__':
     # height_weight()
     # fatigue_handwriting_relationship()
@@ -135,4 +220,7 @@ if __name__ == '__main__':
     # handwriting_test_count_dist()
     # injury_analysis()
     # movement_amplitude()
-    delta_log_linear_regressions()
+    # delta_log_linear_regressions()
+    # delta_log_params_distribution_all_tries()
+    # handwriting_stddev_analysis()
+    normality_test()
