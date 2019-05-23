@@ -5,14 +5,20 @@ from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import cross_validate
 from sklearn.pipeline import make_pipeline
+from data_extraction import medical_traits
 
-df = get_subject_metrics()[['t0', 'D1', 'mu1', 'ss1', 'D2', 'mu2', 'ss2', 'SNR', 'avg_fatigue']].dropna()
-X = df[['t0', 'D1', 'mu1', 'ss1', 'D2', 'mu2', 'ss2', 'SNR']]
-y = df['avg_fatigue']
+
+X_variables = medical_traits
+y_variable = 't0'
+
+df = get_subject_metrics()[X_variables + [y_variable]].dropna()
+X = df[X_variables]
+y = df[y_variable]
 scoring = [
     'r2',
     'neg_mean_absolute_error',
 ]
+
 
 scaler = StandardScaler()
 scaler.fit(X)
@@ -25,6 +31,8 @@ models = [
     svm.SVR(gamma='auto'),
     neural_network.MLPRegressor((4,), max_iter=20000)
 ]
+
+print('Training on ' + str(X.shape[0]) + ' samples')
 
 for model in models:
     cv_results = cross_validate(model, X, y, cv=3, scoring=scoring, return_train_score=True)
