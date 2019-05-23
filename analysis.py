@@ -5,6 +5,7 @@ import matplotlib.colors as colors
 import matplotlib.cm as cmx
 from sqlalchemy import create_engine
 import numpy as np
+from scipy import stats
 from scipy.stats import shapiro, normaltest, norm, lognorm, kstest
 
 db_name = 'data/data_carabins.db'
@@ -204,6 +205,24 @@ def normality_test():
     plt.show()
 
 
+def medical_outliers(threshold=3):
+    from data_extraction import medical_traits, delta_log_params
+    result = pd.DataFrame(columns=['subject_id', 'variable', 'z-score'])
+    for var in medical_traits + delta_log_params:
+        df = get_subject_metrics()[['id'] + [var]].dropna()
+        search_data = df[var]
+        z = np.abs(stats.zscore(search_data))
+        indexes = np.where(z > threshold)
+        for index in indexes[0]:
+            result = result.append({
+                'subject_id': df['id'].iloc[index],
+                'variable': var,
+                'z-score': z[index]
+            }, ignore_index=True)
+            result = result.sort_values(by=['z-score'], ascending=False)
+    print(result.to_string(index=False))
+
+
 if __name__ == '__main__':
     # height_weight()
     # fatigue_handwriting_relationship()
@@ -215,4 +234,5 @@ if __name__ == '__main__':
     # delta_log_linear_regressions()
     # delta_log_params_distribution_all_tries()
     # handwriting_stddev_analysis()
-    normality_test()
+    # normality_test()
+    medical_outliers()

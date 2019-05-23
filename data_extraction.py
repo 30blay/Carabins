@@ -7,6 +7,10 @@ import re
 import math
 
 
+medical_traits = ['arm_length', 'asym_drop_box', 'asym_tuck_jump', 'hop_g1', 'hop_g2', 'hop_d1', 'hop_d2', 'hop3_g1', 'hop3_g2', 'hop3_d1', 'hop3_d2', 'hop3_cr_g1', 'hop3_cr_g2', 'hop3_cr_d1', 'hop3_cr_d2', 're_gh_g1', 're_gh_g2', 're_gh_d1', 're_gh_d2', 'flex_g1', 'flex_g2', 'flex_d1', 'flex_d2', 'scap_g1', 'scap_g2', 'scap_d1', 'scap_d2']
+delta_log_params = ['t0', 'D1', 'mu1', 'ss1', 'D2', 'mu2', 'ss2', 'SNR']
+
+
 def value_or_null(df, row, col):
     value = df.iat[row, col]
     if isinstance(value, float) and math.isnan(value):
