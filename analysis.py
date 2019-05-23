@@ -191,25 +191,17 @@ def handwriting_stddev_analysis():
 def normality_test():
     alpha = 0.1
     df = get_subject_metrics()
+    results = pd.DataFrame(columns=['variable', 'model', 'p-value'])
+
     for tested_var_name in ['t0', 'D1', 'mu1', 'ss1', 'D2', 'mu2', 'ss2', 'SNR']:
-        print(tested_var_name)
         tested_data = df[tested_var_name].dropna()
-
-        # normal_distribution
-        sns.distplot(tested_data)
-        plt.show()
-        statistic, p = kstest(tested_data, "norm", norm.fit(tested_data))
-        if p < alpha:  # null hypothesis: x comes from a normal distribution
-            print(tested_var_name + " is not normally distributed (p = {:g})".format(p))
-        else:
-            print(tested_var_name + " may be normally distributed (p = {:g})".format(p))
-
-        # lognormal distribution
-        statistic, log_p = kstest(tested_data, "lognorm", lognorm.fit(tested_data))
-        if log_p < alpha:  # null hypothesis: x comes from a normal distribution
-            print(tested_var_name + " is not lognormally distributed (p = {:g})".format(log_p))
-        else:
-            print(tested_var_name + " may be lognormally distributed (p = {:g})".format(log_p))
+        for model in [norm, lognorm]:
+            statistic, p = kstest(tested_data, model.name, model.fit(tested_data))
+            results = results.append({'variable': tested_var_name, 'model': model.name, 'p-value': p}, ignore_index=True)
+    results = results.pivot(index='variable', columns='model', values='p-value')
+    ax = sns.heatmap(results, annot=True, cbar=False)
+    ax.set_title('P-value using Kolmogorov-Smirnov')
+    plt.show()
 
 
 if __name__ == '__main__':
