@@ -96,7 +96,7 @@ def extract_medical(session, filename='data/#_test médicaux carabins fév 2019.
     session.commit()
 
 
-def extract_handwriting(session, path='data/Delta_carabins'):
+def extract_handwriting(session, path='data/Baseline'):
     delta_dir = os.path.join(path, 'Delta')
     filenames = os.listdir(delta_dir)  # get all files' and folders' names
     for name in filenames:  # loop through all the files and folders
