@@ -189,6 +189,7 @@ def handwriting_stddev_analysis():
     sns.pairplot(df[['t0_std', 'D1_std', 'mu1_std', 'ss1_std', 'D2_std', 'mu2_std', 'ss2_std', 'SNR_std']])
     plt.show()
 
+
 def normality_test():
     alpha = 0.1
     df = get_subject_metrics()
@@ -223,6 +224,16 @@ def medical_outliers(threshold=3):
     print(result.to_string(index=False))
 
 
+def test_id_corr():
+    engine = create_engine('sqlite:///' + db_name)
+    df = pd.read_sql_query("SELECT * FROM handwriting", con=engine.connect())
+    corr = df[['t0', 'D1', 'mu1', 'ss1', 'D2', 'mu2', 'ss2', 'SNR']].corrwith(df['test_id'])
+    ax = corr.plot(kind='bar')
+    ax.set_title('Correlation to test_id')
+    ax.set_ylabel('R')
+    plt.show()
+
+
 if __name__ == '__main__':
     # height_weight()
     # fatigue_handwriting_relationship()
@@ -236,3 +247,4 @@ if __name__ == '__main__':
     handwriting_stddev_analysis()
     # normality_test()
     # medical_outliers()
+    # test_id_corr()
