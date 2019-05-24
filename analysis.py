@@ -169,13 +169,18 @@ def movement_amplitude():
 def delta_log_linear_regressions():
     df = get_subject_metrics()
     corr = df[['t0', 'D1', 'mu1', 'ss1', 'D2', 'mu2', 'ss2', 'SNR']].corr()
-    ax1 = sns.heatmap(corr, annot=True, cbar=False, square=True)
+    mask = np.zeros_like(corr)
+    mask[np.triu_indices_from(mask)] = True
+    ax1 = sns.heatmap(corr, annot=True, cbar=False, square=True, mask=mask)
     ax1.set_title("R correlation coefficient on subject averages")
     plt.show()
 
     engine = create_engine('sqlite:///' + db_name)
     df = pd.read_sql_query("SELECT t0, D1, mu1, ss1, D2, mu2, ss2, SNR FROM handwriting", con=engine.connect())
-    ax2 = sns.heatmap(df.corr(), annot=True, cbar=False, square=True)
+    corr = df.corr()
+    mask = np.zeros_like(corr)
+    mask[np.triu_indices_from(mask)] = True
+    ax2 = sns.heatmap(corr, annot=True, cbar=False, square=True, mask=mask)
     ax2.set_title("R correlation coefficient on individual tries")
     plt.show()
 
@@ -184,7 +189,10 @@ def handwriting_stddev_analysis():
     metrics = get_subject_metrics()
     hw_std = get_handwriting_stddev()
     df = pd.merge(hw_std, metrics, on='id')
-    sns.heatmap(df[['t0_std', 'D1_std', 'mu1_std', 'ss1_std', 'D2_std', 'mu2_std', 'ss2_std', 'SNR_std']].corr(), annot=True, cbar=False, square=True)
+    corr = df[['t0_std', 'D1_std', 'mu1_std', 'ss1_std', 'D2_std', 'mu2_std', 'ss2_std', 'SNR_std']].corr()
+    mask = np.zeros_like(corr)
+    mask[np.triu_indices_from(mask)] = True
+    sns.heatmap(corr, annot=True, cbar=False, square=True, mask=mask)
     plt.show()
     sns.pairplot(df[['t0_std', 'D1_std', 'mu1_std', 'ss1_std', 'D2_std', 'mu2_std', 'ss2_std', 'SNR_std']])
     plt.show()
@@ -231,6 +239,8 @@ def test_id_corr():
     ax = corr.plot(kind='bar')
     ax.set_title('Correlation to test_id')
     ax.set_ylabel('R')
+    ax.axhline(color='black', linewidth=0.5)
+    plt.ylim(top=1, bottom=-1)
     plt.show()
 
 
