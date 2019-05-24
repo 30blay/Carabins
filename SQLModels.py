@@ -74,12 +74,13 @@ class Medical(Base):
     scap_d2 = Column(Float)
 
 
-class Handwriting(Base):
-    __tablename__ = 'handwriting'
+class DeltaLog(Base):
+    __tablename__ = 'deltalog'
 
     subject_id = Column(Integer, ForeignKey('subject.subject_id'))
-    test_id = Column(Integer)
-    PrimaryKeyConstraint(subject_id, test_id)
+    test_name = Column(String(), nullable=False)
+    stroke_id = Column(Integer)
+    PrimaryKeyConstraint(subject_id, test_name, stroke_id)
     t0 = Column(Float)
     D1 = Column(Float)
     mu1 = Column(Float)

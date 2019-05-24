@@ -1,6 +1,6 @@
 from sqlalchemy import MetaData, create_engine, or_
 from sqlalchemy.orm import sessionmaker
-from SQLModels import metadata, Subject, Fatigue, Medical, Handwriting
+from SQLModels import metadata, Subject, Fatigue, Medical, DeltaLog
 import pandas as pd
 import os
 import re
@@ -111,9 +111,10 @@ def extract_handwriting(session, path='data/Baseline'):
         xl = pd.ExcelFile(excel_path)
         df = xl.parse()
         for index, row in df.iterrows():
-            handwriting = Handwriting(
+            handwriting = DeltaLog(
                 subject_id=subject_id,
-                test_id=index,
+                test_name='Traits_rapides_reaction_visuelle_simple',
+                stroke_id=index,
                 t0=row['t0'],
                 D1=row['D1'],
                 mu1=row['mu1'],
@@ -145,20 +146,20 @@ def apply_filters(session, null_fatigue=False, null_medical=False, null_handwrit
         session.execute("DELETE FROM medical WHERE height is NULL")
 
     if null_handwriting:
-        session.execute("DELETE FROM handwriting WHERE t0 is NULL")
+        session.execute("DELETE FROM deltalog WHERE t0 is NULL")
 
     if low_snr:
-        session.execute("DELETE FROM handwriting WHERE SNR < 15")
+        session.execute("DELETE FROM deltalog WHERE SNR < 15")
 
     if mov_amplitude:
-        session.execute("DELETE FROM handwriting WHERE (D1-D2) < 125 OR (D1-D2) > 250")
+        session.execute("DELETE FROM deltalog WHERE (D1-D2) < 125 OR (D1-D2) > 250")
 
     if d1_d2_max:
-        session.execute("DELETE FROM handwriting WHERE D1>500 OR D2>500")
+        session.execute("DELETE FROM deltalog WHERE D1>500 OR D2>500")
 
     if min_num_tests:
-        session.execute("""DELETE FROM handwriting WHERE subject_id IN 
-                        (SELECT subject_id FROM handwriting GROUP BY subject_id HAVING count(*)<15)""")
+        session.execute("""DELETE FROM deltalog WHERE subject_id IN 
+                        (SELECT subject_id FROM deltalog GROUP BY subject_id HAVING count(*)<15)""")
 
     session.commit()
 
@@ -186,7 +187,7 @@ def create_db(db_name='data/carabins_data.db'):
                   min_num_tests=True,
                   )
 
-    handwriting_rows = session.query(Handwriting).group_by('subject_id').count()
+    handwriting_rows = session.query(DeltaLog).group_by('subject_id').count()
     print("Extracted " + str(handwriting_rows) + " valid handwriting tests")
     medical_rows = session.query(Medical).count()
     print("Extracted " + str(medical_rows) + " valid medical tests")
