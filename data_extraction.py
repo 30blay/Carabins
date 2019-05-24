@@ -1,6 +1,7 @@
 from sqlalchemy import MetaData, create_engine, or_
 from sqlalchemy.orm import sessionmaker
 from SQLModels import metadata, Subject, Fatigue, Medical, DeltaLog
+from endpoint_finder import get_delta_x
 import pandas as pd
 import os
 import re
@@ -97,34 +98,47 @@ def extract_medical(session, filename='data/#_test médicaux carabins fév 2019.
 
 
 def extract_handwriting(session, path='data/Baseline'):
+    # delta_x = get_delta_x(path)
+
     delta_dir = os.path.join(path, 'Delta')
     filenames = os.listdir(delta_dir)  # get all files' and folders' names
     for name in filenames:  # loop through all the files and folders
         m = re.search('(?<=_)(\d+)(?=_)', name)
         subject_id = int(m.group(0))
         subject_dir = os.path.join(delta_dir, name)
-        if not os.path.isdir(subject_dir):
-            break
-        excel_path = os.path.join(subject_dir, "xlsx/Traits_rapides_reaction_visuelle_simple.xlsx")
-        subject = Subject(subject_id=subject_id)
-        session.merge(subject)  # no error if already exists
-        xl = pd.ExcelFile(excel_path)
-        df = xl.parse()
-        for index, row in df.iterrows():
-            handwriting = DeltaLog(
-                subject_id=subject_id,
-                test_name='Traits_rapides_reaction_visuelle_simple',
-                stroke_id=index,
-                t0=row['t0'],
-                D1=row['D1'],
-                mu1=row['mu1'],
-                ss1=row['ss1'],
-                D2=row['D2'],
-                mu2=row['mu2'],
-                ss2=row['ss2'],
-                SNR=row['SNR'],
-            )
-            session.add(handwriting)
+
+        for test_name in [
+            'Traits_rapides_reaction_visuelle_simple',
+            'Compromis_vitesse_precision_A',
+            'Compromis_vitesse_precision_B',
+            'Compromis_vitesse_precision_C',
+            'Compromis_vitesse_precision_D',
+        ]:
+            excel_path = os.path.join(subject_dir, "xlsx/" + test_name + ".xlsx")
+            subject = Subject(subject_id=subject_id)
+            session.merge(subject)  # no error if already exists
+            xl = pd.ExcelFile(excel_path)
+            df = xl.parse()
+            for stroke_id, row in df.iterrows():
+
+                # Because certain files have min/max rows
+                if row[0] != 'C':
+                    break
+
+                handwriting = DeltaLog(
+                    subject_id=subject_id,
+                    test_name=test_name,
+                    stroke_id=stroke_id,
+                    t0=row['t0'],
+                    D1=row['D1'],
+                    mu1=row['mu1'],
+                    ss1=row['ss1'],
+                    D2=row['D2'],
+                    mu2=row['mu2'],
+                    ss2=row['ss2'],
+                    SNR=row['SNR'],
+                )
+                session.add(handwriting)
     session.commit()
 
 
@@ -152,7 +166,13 @@ def apply_filters(session, null_fatigue=False, null_medical=False, null_handwrit
         session.execute("DELETE FROM deltalog WHERE SNR < 15")
 
     if mov_amplitude:
-        session.execute("DELETE FROM deltalog WHERE (D1-D2) < 125 OR (D1-D2) > 250")
+        session.execute("DELETE FROM deltalog WHERE test_name='Traits_rapides_reaction_visuelle_simple' AND ((D1-D2) < 125 OR (D1-D2) > 250)")
+        delta_x_range = {
+            'Compromis_vitesse_precision_A': (13800, 18100),
+            'Compromis_vitesse_precision_B': (10200, 13800),
+            'Compromis_vitesse_precision_C': (6400, 9400),
+            'Compromis_vitesse_precision_D': (2700, 5000),
+        }
 
     if d1_d2_max:
         session.execute("DELETE FROM deltalog WHERE D1>500 OR D2>500")
