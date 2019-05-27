@@ -1,6 +1,6 @@
 from sqlalchemy import MetaData, create_engine, or_
 from sqlalchemy.orm import sessionmaker
-from SQLModels import metadata, Subject, Fatigue, Medical, DeltaLog
+from SQLModels import metadata, Subject, Fatigue, Medical, DeltaLog, SigmaLog, Lognormal
 from endpoint_finder import get_delta_x
 import pandas as pd
 import os
@@ -106,10 +106,12 @@ def subject_dir_gen(path):
         yield(subject_id, subject_dir)
 
 
-def extract_handwriting(session, path='data/Baseline'):
+def extract_deltalog(session, path='data/Baseline'):
     # delta_x = get_delta_x(path)
 
     for (subject_id, subject_dir) in subject_dir_gen(path='data/Baseline/Delta'):
+        subject = Subject(subject_id=subject_id)
+        session.merge(subject)  # no error if already exists
         for test_name in [
             'Traits_rapides_reaction_visuelle_simple',
             'Compromis_vitesse_precision_A',
@@ -118,8 +120,6 @@ def extract_handwriting(session, path='data/Baseline'):
             'Compromis_vitesse_precision_D',
         ]:
             excel_path = os.path.join(subject_dir, "xlsx/" + test_name + ".xlsx")
-            subject = Subject(subject_id=subject_id)
-            session.merge(subject)  # no error if already exists
             xl = pd.ExcelFile(excel_path)
             df = xl.parse()
             for stroke_id, row in df.iterrows():
@@ -142,6 +142,54 @@ def extract_handwriting(session, path='data/Baseline'):
                     SNR=row['SNR'],
                 )
                 session.add(handwriting)
+    session.commit()
+
+
+def extract_sigmalog(session, path='data/Baseline'):
+    # delta_x = get_delta_x(path)
+    sigmalog_id = 0
+    for (subject_id, subject_dir) in subject_dir_gen(path='data/Baseline/Sigma'):
+        subject = Subject(subject_id=subject_id)
+        session.merge(subject)  # no error if already exists
+        for test_name in [
+            'Traits_rapides_reaction_visuelle_simple',
+            'Compromis_vitesse_precision_A',
+            'Compromis_vitesse_precision_B',
+            'Compromis_vitesse_precision_C',
+            'Compromis_vitesse_precision_D',
+        ]:
+            test_path = os.path.join(subject_dir, test_name + '_hws')
+            filenames = os.listdir(test_path)  # get all files names
+            for filename in [f for f in filenames if 'ana' in f]:
+                m = re.search('(\d+)', filename)
+                stroke_id = int(m.group(0))
+                ana_path = os.path.join(test_path, filename)
+                header = pd.read_csv(ana_path, sep=' ', skipinitialspace=True, nrows=3)
+                df = pd.read_csv(ana_path, sep=' ', skipinitialspace=True, header=None, skiprows=4)
+
+                sigmalog = SigmaLog(
+                    id=sigmalog_id,
+                    subject_id=subject_id,
+                    test_name=test_name,
+                    stroke_id=stroke_id,
+                    version=header.iat[0, 1],
+                    nb_lognorm=header.iat[1, 1],
+                    SNR=header.iat[2, 1],
+                )
+                sigmalog_id += 1
+                session.add(sigmalog)
+
+                for _, row in df.iterrows():
+                    lognormal = Lognormal(
+                        sigmalog_id=sigmalog.id,
+                        t0=row.iat[0],
+                        D=row.iat[1],
+                        mu=row.iat[2],
+                        ss=row.iat[3],
+                        theta_start=row.iat[4],
+                        theta_end=row.iat[5],
+                    )
+                    session.add(lognormal)
     session.commit()
 
 
@@ -199,7 +247,8 @@ def create_db(db_name='data/carabins_data.db'):
 
     extract_fatigue(session)
     extract_medical(session)
-    extract_handwriting(session)
+    extract_deltalog(session)
+    extract_sigmalog(session)
     apply_filters(session,
                   null_fatigue=True,
                   null_handwriting=True,
@@ -210,11 +259,11 @@ def create_db(db_name='data/carabins_data.db'):
                   min_num_tests=True,
                   )
 
-    handwriting_rows = session.query(DeltaLog).group_by('subject_id').count()
-    print("Extracted " + str(handwriting_rows) + " valid handwriting tests")
+    deltalog_rows = session.query(DeltaLog).group_by('subject_id').count()
     medical_rows = session.query(Medical).count()
-    print("Extracted " + str(medical_rows) + " valid medical tests")
     fatigue_rows = session.query(Fatigue).count()
+    print("Extracted " + str(deltalog_rows) + " valid handwriting tests")
+    print("Extracted " + str(medical_rows) + " valid medical tests")
     print("Extracted " + str(fatigue_rows) + " valid fatigue tests")
 
     session.close()

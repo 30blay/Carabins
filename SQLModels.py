@@ -101,6 +101,7 @@ class SigmaLog(Base):
     stroke_id = Column(Integer)
     UniqueConstraint(subject_id, test_name, stroke_id)
     version = Column(Integer)
+    nb_lognorm = Column(Integer)
     SNR = Column(Float)
 
 
