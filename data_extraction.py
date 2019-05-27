@@ -97,16 +97,19 @@ def extract_medical(session, filename='data/#_test médicaux carabins fév 2019.
     session.commit()
 
 
-def extract_handwriting(session, path='data/Baseline'):
-    # delta_x = get_delta_x(path)
-
-    delta_dir = os.path.join(path, 'Delta')
-    filenames = os.listdir(delta_dir)  # get all files' and folders' names
+def subject_dir_gen(path):
+    filenames = os.listdir(path)  # get all files' and folders' names
     for name in filenames:  # loop through all the files and folders
         m = re.search('(?<=_)(\d+)(?=_)', name)
         subject_id = int(m.group(0))
-        subject_dir = os.path.join(delta_dir, name)
+        subject_dir = os.path.join(path, name)
+        yield(subject_id, subject_dir)
 
+
+def extract_handwriting(session, path='data/Baseline'):
+    # delta_x = get_delta_x(path)
+
+    for (subject_id, subject_dir) in subject_dir_gen(path='data/Baseline/Delta'):
         for test_name in [
             'Traits_rapides_reaction_visuelle_simple',
             'Compromis_vitesse_precision_A',
