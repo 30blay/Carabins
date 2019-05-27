@@ -1,5 +1,6 @@
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, ForeignKey, Date, Integer, String, Float, Boolean, PrimaryKeyConstraint
+from sqlalchemy import Column, ForeignKey, Date, Integer, String, Float, Boolean, PrimaryKeyConstraint,\
+    ForeignKeyConstraint, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 
@@ -89,3 +90,28 @@ class DeltaLog(Base):
     mu2 = Column(Float)
     ss2 = Column(Float)
     SNR = Column(Float)
+
+
+class SigmaLog(Base):
+    __tablename__ = 'sigmalog'
+
+    id = Column(Integer, primary_key=True)
+    subject_id = Column(Integer, ForeignKey('subject.subject_id'))
+    test_name = Column(String(), nullable=False)
+    stroke_id = Column(Integer)
+    UniqueConstraint(subject_id, test_name, stroke_id)
+    version = Column(Integer)
+    SNR = Column(Float)
+
+
+class Lognormal(Base):
+    __tablename__ = 'lognormal'
+
+    id = Column(Integer, primary_key=True)
+    sigmalog_id = Column(Integer, ForeignKey('sigmalog.id'))
+    t0 = Column(Float)
+    D = Column(Float)
+    mu = Column(Float)
+    ss = Column(Float)
+    theta_start = Column(Float)
+    theta_end = Column(Float)
