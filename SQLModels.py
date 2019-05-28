@@ -1,5 +1,6 @@
 from sqlalchemy.ext.declarative import declarative_base
-from sqlalchemy import Column, ForeignKey, Date, Integer, String, Float, Boolean, PrimaryKeyConstraint
+from sqlalchemy import Column, ForeignKey, Date, Integer, String, Float, Boolean, PrimaryKeyConstraint,\
+    ForeignKeyConstraint, UniqueConstraint
 from sqlalchemy.orm import relationship
 
 
@@ -74,12 +75,14 @@ class Medical(Base):
     scap_d2 = Column(Float)
 
 
-class Handwriting(Base):
-    __tablename__ = 'handwriting'
+class DeltaLog(Base):
+    __tablename__ = 'deltalog'
 
     subject_id = Column(Integer, ForeignKey('subject.subject_id'))
-    test_id = Column(Integer)
-    PrimaryKeyConstraint(subject_id, test_id)
+    test_name = Column(String(), nullable=False)
+    stroke_id = Column(Integer)
+    post_exercice = Column(Boolean)
+    PrimaryKeyConstraint(subject_id, test_name, stroke_id, post_exercice)
     t0 = Column(Float)
     D1 = Column(Float)
     mu1 = Column(Float)
@@ -88,3 +91,31 @@ class Handwriting(Base):
     mu2 = Column(Float)
     ss2 = Column(Float)
     SNR = Column(Float)
+
+
+class SigmaLog(Base):
+    __tablename__ = 'sigmalog'
+    id = Column(Integer, primary_key=True)
+    subject_id = Column(Integer, ForeignKey('subject.subject_id'))
+    test_name = Column(String(), nullable=False)
+    stroke_id = Column(Integer)
+    post_exercice = Column(Boolean)
+    UniqueConstraint(subject_id, test_name, stroke_id, post_exercice)
+    version = Column(Integer)
+    nb_lognorm = Column(Integer)
+    SNR = Column(Float)
+    lognormals = relationship('Lognormal', backref='sigmalog', lazy='dynamic')
+
+
+class Lognormal(Base):
+    __tablename__ = 'lognormal'
+
+    id = Column(Integer, primary_key=True)
+    sigmalog_id = Column(Integer, ForeignKey('sigmalog.id'))
+    t0 = Column(Float)
+    D = Column(Float)
+    mu = Column(Float)
+    ss = Column(Float)
+    theta_start = Column(Float)
+    theta_end = Column(Float)
+
