@@ -81,7 +81,8 @@ class DeltaLog(Base):
     subject_id = Column(Integer, ForeignKey('subject.subject_id'))
     test_name = Column(String(), nullable=False)
     stroke_id = Column(Integer)
-    PrimaryKeyConstraint(subject_id, test_name, stroke_id)
+    post_exercice = Column(Boolean)
+    PrimaryKeyConstraint(subject_id, test_name, stroke_id, post_exercice)
     t0 = Column(Float)
     D1 = Column(Float)
     mu1 = Column(Float)
@@ -94,15 +95,16 @@ class DeltaLog(Base):
 
 class SigmaLog(Base):
     __tablename__ = 'sigmalog'
-
     id = Column(Integer, primary_key=True)
     subject_id = Column(Integer, ForeignKey('subject.subject_id'))
     test_name = Column(String(), nullable=False)
     stroke_id = Column(Integer)
-    UniqueConstraint(subject_id, test_name, stroke_id)
+    post_exercice = Column(Boolean)
+    UniqueConstraint(subject_id, test_name, stroke_id, post_exercice)
     version = Column(Integer)
     nb_lognorm = Column(Integer)
     SNR = Column(Float)
+    lognormals = relationship('Lognormal', backref='sigmalog', lazy='dynamic')
 
 
 class Lognormal(Base):
@@ -116,3 +118,4 @@ class Lognormal(Base):
     ss = Column(Float)
     theta_start = Column(Float)
     theta_end = Column(Float)
+
