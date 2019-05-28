@@ -103,7 +103,7 @@ def subject_dir_gen(path):
         yield(subject_id, subject_dir)
 
 
-def extract_deltalog(session, path='data/Baseline'):
+def extract_deltalog(session, path='data/Baseline', post_exercice=False):
     for (subject_id, subject_dir) in subject_dir_gen(path=path + '/Delta'):
         subject = Subject(subject_id=subject_id)
         session.merge(subject)  # no error if already exists
@@ -115,6 +115,9 @@ def extract_deltalog(session, path='data/Baseline'):
             'Compromis_vitesse_precision_D',
         ]:
             excel_path = os.path.join(subject_dir, "xlsx/" + test_name + ".xlsx")
+            if not os.path.exists(excel_path):
+                continue
+
             xl = pd.ExcelFile(excel_path)
             df = xl.parse()
             for stroke_id, row in df.iterrows():
@@ -127,6 +130,7 @@ def extract_deltalog(session, path='data/Baseline'):
                     subject_id=subject_id,
                     test_name=test_name,
                     stroke_id=stroke_id,
+                    post_exercice=post_exercice,
                     t0=row['t0'],
                     D1=row['D1'],
                     mu1=row['mu1'],
@@ -140,8 +144,7 @@ def extract_deltalog(session, path='data/Baseline'):
     session.commit()
 
 
-def extract_sigmalog(session, path='data/Baseline'):
-    sigmalog_id = 0
+def extract_sigmalog(session, path='data/Baseline', post_exercice=False):
     for (subject_id, subject_dir) in subject_dir_gen(path=path + '/Sigma'):
         subject = Subject(subject_id=subject_id)
         session.merge(subject)  # no error if already exists
@@ -153,6 +156,9 @@ def extract_sigmalog(session, path='data/Baseline'):
             'Compromis_vitesse_precision_D',
         ]:
             test_path = os.path.join(subject_dir, test_name + '_hws')
+            if not os.path.exists(test_path):
+                continue
+
             filenames = os.listdir(test_path)  # get all files names
             for filename in [f for f in filenames if 'ana' in f]:
                 m = re.search('(\d+)', filename)
@@ -162,20 +168,16 @@ def extract_sigmalog(session, path='data/Baseline'):
                 df = pd.read_csv(ana_path, sep=' ', skipinitialspace=True, header=None, skiprows=4)
 
                 sigmalog = SigmaLog(
-                    id=sigmalog_id,
                     subject_id=subject_id,
                     test_name=test_name,
                     stroke_id=stroke_id,
+                    post_exercice=post_exercice,
                     version=header.iat[0, 1],
                     nb_lognorm=header.iat[1, 1],
                     SNR=header.iat[2, 1],
                 )
-                sigmalog_id += 1
-                session.add(sigmalog)
-
                 for _, row in df.iterrows():
                     lognormal = Lognormal(
-                        sigmalog_id=sigmalog.id,
                         t0=row.iat[0],
                         D=row.iat[1],
                         mu=row.iat[2],
@@ -183,7 +185,10 @@ def extract_sigmalog(session, path='data/Baseline'):
                         theta_start=row.iat[4],
                         theta_end=row.iat[5],
                     )
-                    session.add(lognormal)
+                    sigmalog.lognormals.append(lognormal)
+
+                session.add(sigmalog)
+                session.bulk_save_objects(sigmalog.lognormals)
     session.commit()
 
 
@@ -236,8 +241,10 @@ def create_db(db_name='data/carabins_data.db'):
 
     extract_fatigue(session)
     extract_medical(session)
-    extract_deltalog(session)
-    extract_sigmalog(session)
+    extract_deltalog(session, path='data/Baseline', post_exercice=False)
+    extract_deltalog(session, path='data/Post_pratique', post_exercice=True)
+    extract_sigmalog(session, path='data/Baseline', post_exercice=False)
+    extract_sigmalog(session, path='data/Post_pratique', post_exercice=True)
     apply_filters(session,
                   null_fatigue=True,
                   null_handwriting=True,

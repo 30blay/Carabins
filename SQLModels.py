@@ -95,7 +95,6 @@ class DeltaLog(Base):
 
 class SigmaLog(Base):
     __tablename__ = 'sigmalog'
-
     id = Column(Integer, primary_key=True)
     subject_id = Column(Integer, ForeignKey('subject.subject_id'))
     test_name = Column(String(), nullable=False)
@@ -105,6 +104,7 @@ class SigmaLog(Base):
     version = Column(Integer)
     nb_lognorm = Column(Integer)
     SNR = Column(Float)
+    lognormals = relationship('Lognormal', backref='sigmalog', lazy='dynamic')
 
 
 class Lognormal(Base):
@@ -118,3 +118,4 @@ class Lognormal(Base):
     ss = Column(Float)
     theta_start = Column(Float)
     theta_end = Column(Float)
+
