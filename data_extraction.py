@@ -1,7 +1,6 @@
 from sqlalchemy import MetaData, create_engine, or_
 from sqlalchemy.orm import sessionmaker
 from SQLModels import metadata, Subject, Fatigue, Medical, DeltaLog, SigmaLog, Lognormal
-from endpoint_finder import get_delta_x
 import pandas as pd
 import os
 import re
@@ -10,8 +9,6 @@ import math
 
 medical_traits = ['arm_length', 'asym_drop_box', 'asym_tuck_jump', 'hop_g1', 'hop_g2', 'hop_d1', 'hop_d2', 'hop3_g1', 'hop3_g2', 'hop3_d1', 'hop3_d2', 'hop3_cr_g1', 'hop3_cr_g2', 'hop3_cr_d1', 'hop3_cr_d2', 're_gh_g1', 're_gh_g2', 're_gh_d1', 're_gh_d2', 'flex_g1', 'flex_g2', 'flex_d1', 'flex_d2', 'scap_g1', 'scap_g2', 'scap_d1', 'scap_d2']
 delta_log_params = ['t0', 'D1', 'mu1', 'ss1', 'D2', 'mu2', 'ss2', 'SNR']
-
-db_name = 'data/data_carabins.db'
 
 
 def value_or_null(df, row, col):
@@ -107,9 +104,7 @@ def subject_dir_gen(path):
 
 
 def extract_deltalog(session, path='data/Baseline'):
-    # delta_x = get_delta_x(path)
-
-    for (subject_id, subject_dir) in subject_dir_gen(path='data/Baseline/Delta'):
+    for (subject_id, subject_dir) in subject_dir_gen(path=path + '/Delta'):
         subject = Subject(subject_id=subject_id)
         session.merge(subject)  # no error if already exists
         for test_name in [
@@ -146,9 +141,8 @@ def extract_deltalog(session, path='data/Baseline'):
 
 
 def extract_sigmalog(session, path='data/Baseline'):
-    # delta_x = get_delta_x(path)
     sigmalog_id = 0
-    for (subject_id, subject_dir) in subject_dir_gen(path='data/Baseline/Sigma'):
+    for (subject_id, subject_dir) in subject_dir_gen(path=path + '/Sigma'):
         subject = Subject(subject_id=subject_id)
         session.merge(subject)  # no error if already exists
         for test_name in [
@@ -217,13 +211,8 @@ def apply_filters(session, null_fatigue=False, null_medical=False, null_handwrit
         session.execute("DELETE FROM deltalog WHERE SNR < 15")
 
     if mov_amplitude:
-        session.execute("DELETE FROM deltalog WHERE test_name='Traits_rapides_reaction_visuelle_simple' AND ((D1-D2) < 125 OR (D1-D2) > 250)")
-        delta_x_range = {
-            'Compromis_vitesse_precision_A': (13800, 18100),
-            'Compromis_vitesse_precision_B': (10200, 13800),
-            'Compromis_vitesse_precision_C': (6400, 9400),
-            'Compromis_vitesse_precision_D': (2700, 5000),
-        }
+        session.execute("""DELETE FROM deltalog WHERE test_name='Traits_rapides_reaction_visuelle_simple'
+         AND ((D1-D2) < 125 OR (D1-D2) > 250)""")
 
     if d1_d2_max:
         session.execute("DELETE FROM deltalog WHERE D1>500 OR D2>500")
@@ -272,4 +261,5 @@ def create_db(db_name='data/carabins_data.db'):
 
 
 if __name__ == '__main__':
+    db_name = 'data/data_carabins.db'
     create_db(db_name)
