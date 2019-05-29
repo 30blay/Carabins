@@ -7,28 +7,27 @@ from sqlalchemy import create_engine
 import numpy as np
 from scipy import stats
 from scipy.stats import shapiro, normaltest, norm, lognorm, kstest
-from data_extraction import db_name
 
 
-def get_subject_metrics():
+def get_subject_metrics(db_name='data/data_carabins.db'):
     engine = create_engine('sqlite:///' + db_name)
 
     df = pd.read_sql_query("""SELECT
         subject_id as id,
         medical.*,
         fatigue.*,
-        AVG(handwriting.t0) as t0,
-        AVG(handwriting.D1) as D1,
-        AVG(handwriting.mu1) as mu1,
-        AVG(handwriting.ss1) as ss1,
-        AVG(handwriting.D2) as D2,
-        AVG(handwriting.mu2) as mu2,
-        AVG(handwriting.ss2) as ss2,
-        AVG(handwriting.SNR) as SNR
+        AVG(deltalog.t0) as t0,
+        AVG(deltalog.D1) as D1,
+        AVG(deltalog.mu1) as mu1,
+        AVG(deltalog.ss1) as ss1,
+        AVG(deltalog.D2) as D2,
+        AVG(deltalog.mu2) as mu2,
+        AVG(deltalog.ss2) as ss2,
+        AVG(deltalog.SNR) as SNR
 
         FROM subject 
         LEFT JOIN medical USING (subject_id)
-        LEFT JOIN handwriting USING (subject_id)
+        LEFT JOIN deltalog USING (subject_id)
         LEFT JOIN fatigue USING (subject_id)
         GROUP BY subject_id
         """, con=engine.connect())

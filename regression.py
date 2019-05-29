@@ -5,7 +5,7 @@ from sklearn.metrics import mean_squared_error, r2_score
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import cross_validate
 from sklearn.pipeline import make_pipeline
-from data_extraction import medical_traits
+from .data_extraction import medical_traits
 
 
 X_variables = medical_traits

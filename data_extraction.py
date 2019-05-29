@@ -1,6 +1,6 @@
 from sqlalchemy import MetaData, create_engine, or_
 from sqlalchemy.orm import sessionmaker
-from SQLModels import metadata, Subject, Fatigue, Medical, DeltaLog, SigmaLog, Lognormal
+from .SQLModels import metadata, Subject, Fatigue, Medical, DeltaLog, SigmaLog, Lognormal
 import pandas as pd
 import os
 import re
