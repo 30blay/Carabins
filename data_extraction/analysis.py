@@ -243,3 +243,35 @@ def test_id_corr(db_name=default_db_name):
     ax.axhline(color='black', linewidth=0.5)
     plt.ylim(top=1, bottom=-1)
     plt.show()
+
+
+def post_exercice_deltalog(db_name=default_db_name):
+    engine = create_engine('sqlite:///' + db_name)
+    df = pd.read_sql_query('''SELECT 
+        subject_id,
+        AVG(t0) as t0,
+        AVG(D1) as D1,
+        AVG(mu1) as mu1,
+        AVG(ss1) as ss1,
+        AVG(D2) as D2,
+        AVG(mu2) as mu2,
+        AVG(ss2) as ss2,
+        AVG(SNR) as SNR,
+        post_exercice
+        from deltalog
+     where subject_id in (SELECT DISTINCT subject_id from deltalog where post_exercice is 1)
+     AND test_name='Traits_rapides_reaction_visuelle_simple'
+     GROUP BY subject_id, post_exercice
+    ''', con=engine.connect())
+    df['post_exercice'].replace(inplace=True, to_replace=0, value='pre')
+    df['post_exercice'].replace(inplace=True, to_replace=1, value='post')
+
+    fig = plt.figure()
+    fig.suptitle("Effect of exercice on Delta-lognormal parameters")
+    for i, variable in enumerate(['t0', 'SNR', 'D1', 'D2', 'mu1', 'mu2', 'ss1', 'ss2']):
+        ax = fig.add_subplot(2, 4, i+1)
+        sns.violinplot(x='post_exercice', y=variable, data=df, inner='point', cut=0, bw='silverman')
+        ax.set_xlabel('')
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
+    plt.show()
+
