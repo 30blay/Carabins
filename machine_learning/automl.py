@@ -1,5 +1,5 @@
 from auto_ml import Predictor
-from .analysis import get_subject_metrics
+from data_extraction.analysis import get_subject_metrics
 from sklearn.model_selection import train_test_split
 
 df = get_subject_metrics()[[

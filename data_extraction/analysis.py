@@ -6,7 +6,7 @@ import matplotlib.cm as cmx
 from sqlalchemy import create_engine
 import numpy as np
 from scipy import stats
-from scipy.stats import shapiro, normaltest, norm, lognorm, kstest
+from scipy.stats import norm, lognorm, kstest
 
 
 def get_subject_metrics(db_name='data/data_carabins.db'):
@@ -37,7 +37,7 @@ def get_subject_metrics(db_name='data/data_carabins.db'):
     return df
 
 
-def get_handwriting_stddev():
+def get_handwriting_stddev(db_name='data/data_carabins.db'):
     engine = create_engine('sqlite:///' + db_name)
 
     df = pd.read_sql_query("""SELECT
@@ -50,7 +50,7 @@ def get_handwriting_stddev():
         mu2,
         ss2,
         SNR
-        FROM handwriting
+        FROM deltalog
         """, con=engine.connect())
 
     df = df.groupby('id').agg(
@@ -117,34 +117,34 @@ def delta_log_params_relationship():
     plt.show()
 
 
-def delta_log_params_relationship_all_tries():
+def delta_log_params_relationship_all_tries(db_name='data/data_carabins.db'):
     engine = create_engine('sqlite:///' + db_name)
 
     df = pd.read_sql_query("""SELECT
         t0, D1, mu1, ss1, D2, mu2, ss2, SNR
-        FROM handwriting
+        FROM deltalog
         """, con=engine.connect())
     sns.pairplot(df[['t0', 'D1', 'mu1', 'ss1', 'D2', 'mu2', 'ss2', 'SNR']], dropna=True)
     plt.show()
 
 
-def delta_log_params_distribution_all_tries():
+def delta_log_params_distribution_all_tries(db_name='data/data_carabins.db'):
     engine = create_engine('sqlite:///' + db_name)
 
     df = pd.read_sql_query("""SELECT
         subject_id, t0, D1, mu1, ss1, D2, mu2, ss2, SNR
-        FROM handwriting
+        FROM deltalog
         """, con=engine.connect())
     sns.violinplot(y=df['t0'], x=df['subject_id'])
     plt.show()
 
 
-def handwriting_test_count_dist():
+def handwriting_test_count_dist(db_name='data/data_carabins.db'):
     engine = create_engine('sqlite:///' + db_name)
     df = pd.read_sql_query("""
-        SELECT subject_id, count(test_id) FROM handwriting GROUP BY subject_id
+        SELECT subject_id, count(stroke_id) FROM deltalog GROUP BY subject_id
             """, con=engine.connect())
-    sns.distplot(df['count(test_id)']).set_title('Distribution of the number of handwriting tests')
+    sns.distplot(df['count(stroke_id)']).set_title('Distribution of the number of handwriting tests')
     plt.show()
 
 
@@ -165,7 +165,7 @@ def movement_amplitude():
     plt.show()
 
 
-def delta_log_linear_regressions():
+def delta_log_linear_regressions(db_name='data/data_carabins.db'):
     df = get_subject_metrics()
     corr = df[['t0', 'D1', 'mu1', 'ss1', 'D2', 'mu2', 'ss2', 'SNR']].corr()
     mask = np.zeros_like(corr)
@@ -175,7 +175,7 @@ def delta_log_linear_regressions():
     plt.show()
 
     engine = create_engine('sqlite:///' + db_name)
-    df = pd.read_sql_query("SELECT t0, D1, mu1, ss1, D2, mu2, ss2, SNR FROM handwriting", con=engine.connect())
+    df = pd.read_sql_query("SELECT t0, D1, mu1, ss1, D2, mu2, ss2, SNR FROM deltalog", con=engine.connect())
     corr = df.corr()
     mask = np.zeros_like(corr)
     mask[np.triu_indices_from(mask)] = True
@@ -214,7 +214,7 @@ def normality_test():
 
 
 def medical_outliers(threshold=3):
-    from data_extraction import medical_traits, delta_log_params
+    from data_extraction.data_extraction import medical_traits, delta_log_params
     result = pd.DataFrame(columns=['subject_id', 'variable', 'z-score'])
     for var in medical_traits + delta_log_params:
         df = get_subject_metrics()[['id'] + [var]].dropna()
@@ -231,29 +231,13 @@ def medical_outliers(threshold=3):
     print(result.to_string(index=False))
 
 
-def test_id_corr():
+def test_id_corr(db_name='data/data_carabins.db'):
     engine = create_engine('sqlite:///' + db_name)
-    df = pd.read_sql_query("SELECT * FROM handwriting", con=engine.connect())
-    corr = df[['t0', 'D1', 'mu1', 'ss1', 'D2', 'mu2', 'ss2', 'SNR']].corrwith(df['test_id'])
+    df = pd.read_sql_query("SELECT * FROM deltalog", con=engine.connect())
+    corr = df[['t0', 'D1', 'mu1', 'ss1', 'D2', 'mu2', 'ss2', 'SNR']].corrwith(df['stroke_id'])
     ax = corr.plot(kind='bar')
-    ax.set_title('Correlation to test_id')
+    ax.set_title('Correlation to stroke_id')
     ax.set_ylabel('R')
     ax.axhline(color='black', linewidth=0.5)
     plt.ylim(top=1, bottom=-1)
     plt.show()
-
-
-if __name__ == '__main__':
-    # height_weight()
-    # fatigue_handwriting_relationship()
-    # delta_log_params_relationship()
-    # delta_log_params_relationship_all_tries()
-    # handwriting_test_count_dist()
-    # injury_analysis()
-    # movement_amplitude()
-    # delta_log_linear_regressions()
-    # delta_log_params_distribution_all_tries()
-    handwriting_stddev_analysis()
-    # normality_test()
-    # medical_outliers()
-    # test_id_corr()
