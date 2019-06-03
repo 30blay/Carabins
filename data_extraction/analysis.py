@@ -8,8 +8,10 @@ import numpy as np
 from scipy import stats
 from scipy.stats import norm, lognorm, kstest
 
+default_db_name = 'data/data_carabins.db'
 
-def get_subject_metrics(db_name='data/data_carabins.db'):
+
+def get_subject_metrics(db_name=default_db_name):
     engine = create_engine('sqlite:///' + db_name)
 
     df = pd.read_sql_query("""SELECT
@@ -37,7 +39,7 @@ def get_subject_metrics(db_name='data/data_carabins.db'):
     return df
 
 
-def get_handwriting_stddev(db_name='data/data_carabins.db'):
+def get_handwriting_stddev(db_name=default_db_name):
     engine = create_engine('sqlite:///' + db_name)
 
     df = pd.read_sql_query("""SELECT
@@ -117,7 +119,7 @@ def delta_log_params_relationship():
     plt.show()
 
 
-def delta_log_params_relationship_all_tries(db_name='data/data_carabins.db'):
+def delta_log_params_relationship_all_tries(db_name=default_db_name):
     engine = create_engine('sqlite:///' + db_name)
 
     df = pd.read_sql_query("""SELECT
@@ -128,7 +130,7 @@ def delta_log_params_relationship_all_tries(db_name='data/data_carabins.db'):
     plt.show()
 
 
-def delta_log_params_distribution_all_tries(db_name='data/data_carabins.db'):
+def delta_log_params_distribution_all_tries(db_name=default_db_name):
     engine = create_engine('sqlite:///' + db_name)
 
     df = pd.read_sql_query("""SELECT
@@ -139,7 +141,7 @@ def delta_log_params_distribution_all_tries(db_name='data/data_carabins.db'):
     plt.show()
 
 
-def handwriting_test_count_dist(db_name='data/data_carabins.db'):
+def handwriting_test_count_dist(db_name=default_db_name):
     engine = create_engine('sqlite:///' + db_name)
     df = pd.read_sql_query("""
         SELECT subject_id, count(stroke_id) FROM deltalog GROUP BY subject_id
@@ -165,7 +167,7 @@ def movement_amplitude():
     plt.show()
 
 
-def delta_log_linear_regressions(db_name='data/data_carabins.db'):
+def delta_log_linear_regressions(db_name=default_db_name):
     df = get_subject_metrics()
     corr = df[['t0', 'D1', 'mu1', 'ss1', 'D2', 'mu2', 'ss2', 'SNR']].corr()
     mask = np.zeros_like(corr)
@@ -213,7 +215,7 @@ def normality_test():
     plt.show()
 
 
-def medical_outliers(threshold=3):
+def find_outliers(threshold=3):
     from data_extraction.data_extraction import medical_traits, delta_log_params
     result = pd.DataFrame(columns=['subject_id', 'variable', 'z-score'])
     for var in medical_traits + delta_log_params:
@@ -231,7 +233,7 @@ def medical_outliers(threshold=3):
     print(result.to_string(index=False))
 
 
-def test_id_corr(db_name='data/data_carabins.db'):
+def test_id_corr(db_name=default_db_name):
     engine = create_engine('sqlite:///' + db_name)
     df = pd.read_sql_query("SELECT * FROM deltalog", con=engine.connect())
     corr = df[['t0', 'D1', 'mu1', 'ss1', 'D2', 'mu2', 'ss2', 'SNR']].corrwith(df['stroke_id'])
