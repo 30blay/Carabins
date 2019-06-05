@@ -279,23 +279,31 @@ def post_exercice_deltalog(db_name=default_db_name):
 def medical_asymetry(db_name=default_db_name):
     engine = create_engine('sqlite:///' + db_name)
     df = pd.read_sql_query('''SELECT subject_id,
-     ((hop_g1+hop_g2)/2 - (hop_d1+hop_d2)/2) as hop_diff,
-     ((hop3_g1+hop3_g2)/2 - (hop3_d1+hop3_d2)/2) as hop3_diff,
-     ((hop3_cr_g1+hop3_cr_g2)/2 - (hop3_cr_d1+hop3_cr_d2)/2) as hop3_cr_diff,
-     ((re_gh_g1+re_gh_g2)/2 - (re_gh_d1+re_gh_d2)/2) as re_gh_diff,
-     ((flex_g1+flex_g2)/2 - (flex_d1+flex_d2)/2) as flex_diff,
-     ((scap_g1+scap_g2)/2 - (scap_d1+scap_d2)/2) as scap_diff
+     ((hop_d1+hop_d2)/2 - (hop_g1+hop_g2)/2) as hop_diff,
+     ((hop3_d1+hop3_d2)/2 - (hop3_g1+hop3_g2)/2) as hop3_diff,
+     ((hop3_cr_d1+hop3_cr_d2)/2 - (hop3_cr_g1+hop3_cr_g2)/2) as hop3_cr_diff,
+     ((re_gh_d1+re_gh_d2)/2 - (re_gh_g1+re_gh_g2)/2) as re_gh_diff,
+     ((flex_d1+flex_d2)/2 - (flex_g1+flex_g2)/2) as flex_diff,
+     ((scap_d1+scap_d2)/2 - (scap_g1+scap_g2)/2) as scap_diff
      from medical
      ''', con=engine.connect()).dropna()
     variables = ['hop_diff', 'hop3_diff', 'hop3_cr_diff', 're_gh_diff', 'flex_diff', 'scap_diff']
 
+    z_scores = stats.zscore(df[['re_gh_diff', 'flex_diff', 'scap_diff']])
+    df['upper_limb_avg_z_score'] = np.mean(z_scores, axis=1)
+
     fig = plt.figure()
-    fig.suptitle("Asymétrie gauche - droite")
+    fig.suptitle("Asymétrie droite - gauche")
     for i, variable in enumerate(variables):
         plt.subplot(2, 3, i + 1)
         sns.distplot(df[variable])
         plt.axvline(0, 0, 1, color='black', linewidth=0.5)  # vertical line at 0
     plt.tight_layout(rect=[0, 0, 1, 0.95])
+    plt.show()
+
+    ax = sns.distplot(df['upper_limb_avg_z_score'])
+    ax.text(2.5, 0.5, 'Fort droite', fontsize=15, horizontalalignment='center')  # add text
+    ax.text(-2.5, 0.5, 'Fort gauche', fontsize=15, horizontalalignment='center')  # add text
     plt.show()
 
     return df
