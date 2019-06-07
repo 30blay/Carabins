@@ -49,7 +49,7 @@ def get_traits_rapides_params(db_name=default_db_name):
     return df
 
 
-def get_handwriting_stddev(db_name=default_db_name):
+def get_trait_rapide_stddev(db_name=default_db_name):
     engine = create_engine('sqlite:///' + db_name)
 
     df = pd.read_sql_query("""SELECT
@@ -88,6 +88,19 @@ def get_handwriting_stddev(db_name=default_db_name):
     })
 
     return df
+
+
+def get_sigmalog_params(db_name=default_db_name):
+    engine = create_engine('sqlite:///' + db_name)
+    sigmalog = pd.read_sql_query('''SELECT 
+        subject_id,
+         AVG(nb_lognorm)    as nb_lognorm,
+         AVG(SNR)           as snr
+        from sigmalog
+        where test_name is 'Traits_rapides_reaction_visuelle_simple'
+        group by subject_id
+        ''', con=engine.connect())
+    return sigmalog
 
 
 def height_weight():
@@ -198,7 +211,7 @@ def delta_log_linear_regressions(db_name=default_db_name):
 
 def handwriting_stddev_analysis():
     metrics = get_subject_metrics()
-    hw_std = get_handwriting_stddev()
+    hw_std = get_trait_rapide_stddev()
     df = pd.merge(hw_std, metrics, on='id')
     corr = df[['t0_std', 'D1_std', 'mu1_std', 'ss1_std', 'D2_std', 'mu2_std', 'ss2_std', 'SNR_std']].corr()
     mask = np.zeros_like(corr)
@@ -284,6 +297,24 @@ def post_exercice_deltalog(db_name=default_db_name):
         ax.set_xlabel('')
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.show()
+
+
+def sigmalog_dist(db_name=default_db_name):
+    engine = create_engine('sqlite:///' + db_name)
+    sigmalog = pd.read_sql_query('''SELECT 
+        subject_id, AVG(nb_lognorm), AVG(SNR)
+        from sigmalog
+        where test_name is 'Traits_rapides_reaction_visuelle_simple'
+        group by subject_id
+        ''', con=engine.connect())
+    deltalog = get_traits_rapides_params()
+    df = pd.merge(sigmalog, deltalog, on='subject_id')
+    df = pd.merge(df, get_subject_metrics(), left_on='subject_id', right_on='id')
+    sns.distplot(df['AVG(nb_lognorm)'])
+    plt.show()
+    sns.scatterplot(data=df, x='AVG(nb_lognorm)', y='avg_fatigue')
+    plt.show()
+    return df
 
 
 def medical_asymetry(db_name=default_db_name):
