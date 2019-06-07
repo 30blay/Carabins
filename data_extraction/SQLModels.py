@@ -118,4 +118,3 @@ class Lognormal(Base):
     ss = Column(Float)
     theta_start = Column(Float)
     theta_end = Column(Float)
-
