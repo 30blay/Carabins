@@ -8,28 +8,19 @@ import numpy as np
 from scipy import stats
 from scipy.stats import norm, lognorm, kstest
 
+default_db_name = 'data/data_carabins.db'
 
-def get_subject_metrics(db_name='data/data_carabins.db'):
+
+def get_subject_metrics(db_name=default_db_name):
     engine = create_engine('sqlite:///' + db_name)
 
     df = pd.read_sql_query("""SELECT
         subject_id as id,
         medical.*,
-        fatigue.*,
-        AVG(deltalog.t0) as t0,
-        AVG(deltalog.D1) as D1,
-        AVG(deltalog.mu1) as mu1,
-        AVG(deltalog.ss1) as ss1,
-        AVG(deltalog.D2) as D2,
-        AVG(deltalog.mu2) as mu2,
-        AVG(deltalog.ss2) as ss2,
-        AVG(deltalog.SNR) as SNR
-
+        fatigue.*
         FROM subject 
         LEFT JOIN medical USING (subject_id)
-        LEFT JOIN deltalog USING (subject_id)
         LEFT JOIN fatigue USING (subject_id)
-        GROUP BY subject_id
         """, con=engine.connect())
     df['avg_fatigue'] = df[['gen', 'phys', 'men', 'act', 'mot']].mean(axis=1)
     df.drop(columns="subject_id", inplace=True)
@@ -37,7 +28,28 @@ def get_subject_metrics(db_name='data/data_carabins.db'):
     return df
 
 
-def get_handwriting_stddev(db_name='data/data_carabins.db'):
+def get_traits_rapides_params(db_name=default_db_name):
+    engine = create_engine('sqlite:///' + db_name)
+    df = pd.read_sql_query("""SELECT
+            subject_id,
+            AVG(t0) as t0,
+            AVG(D1) as D1,
+            AVG(mu1) as mu1,
+            AVG(ss1) as ss1,
+            AVG(D2) as D2,
+            AVG(mu2) as mu2,
+            AVG(ss2) as ss2,
+            AVG(SNR) as SNR,
+            post_exercise
+            FROM deltalog 
+            WHERE test_name is 'Traits_rapides_reaction_visuelle_simple' 
+            GROUP BY subject_id, post_exercise
+            """, con=engine.connect())
+
+    return df
+
+
+def get_trait_rapide_stddev(db_name=default_db_name):
     engine = create_engine('sqlite:///' + db_name)
 
     df = pd.read_sql_query("""SELECT
@@ -78,6 +90,19 @@ def get_handwriting_stddev(db_name='data/data_carabins.db'):
     return df
 
 
+def get_sigmalog_params(db_name=default_db_name):
+    engine = create_engine('sqlite:///' + db_name)
+    sigmalog = pd.read_sql_query('''SELECT 
+        subject_id,
+         AVG(nb_lognorm)    as nb_lognorm,
+         AVG(SNR)           as snr
+        from sigmalog
+        where test_name is 'Traits_rapides_reaction_visuelle_simple'
+        group by subject_id
+        ''', con=engine.connect())
+    return sigmalog
+
+
 def height_weight():
     df = get_subject_metrics()
 
@@ -100,7 +125,7 @@ def height_weight():
 
 
 def fatigue_handwriting_relationship():
-    df = get_subject_metrics()
+    df = pd.merge(get_subject_metrics(), get_traits_rapides_params(), left_on='id', right_on='subject_id')
     sns.pairplot(df[[
         'gen',
         'phys',
@@ -112,12 +137,12 @@ def fatigue_handwriting_relationship():
 
 
 def delta_log_params_relationship():
-    df = get_subject_metrics()
+    df = get_traits_rapides_params()
     sns.pairplot(df[['t0', 'D1', 'mu1', 'ss1', 'D2', 'mu2', 'ss2', 'SNR']], dropna=True)
     plt.show()
 
 
-def delta_log_params_relationship_all_tries(db_name='data/data_carabins.db'):
+def delta_log_params_relationship_all_tries(db_name=default_db_name):
     engine = create_engine('sqlite:///' + db_name)
 
     df = pd.read_sql_query("""SELECT
@@ -128,7 +153,7 @@ def delta_log_params_relationship_all_tries(db_name='data/data_carabins.db'):
     plt.show()
 
 
-def delta_log_params_distribution_all_tries(db_name='data/data_carabins.db'):
+def delta_log_params_distribution_all_tries(db_name=default_db_name):
     engine = create_engine('sqlite:///' + db_name)
 
     df = pd.read_sql_query("""SELECT
@@ -139,7 +164,7 @@ def delta_log_params_distribution_all_tries(db_name='data/data_carabins.db'):
     plt.show()
 
 
-def handwriting_test_count_dist(db_name='data/data_carabins.db'):
+def handwriting_test_count_dist(db_name=default_db_name):
     engine = create_engine('sqlite:///' + db_name)
     df = pd.read_sql_query("""
         SELECT subject_id, count(stroke_id) FROM deltalog GROUP BY subject_id
@@ -149,7 +174,7 @@ def handwriting_test_count_dist(db_name='data/data_carabins.db'):
 
 
 def injury_analysis():
-    df = get_subject_metrics()
+    df = pd.merge(get_subject_metrics(), get_traits_rapides_params(), left_on='id', right_on='subject_id')
     df['injured'] = np.where(np.equal(df['injury'], None), 'sain', 'blessé')
     for i, variable in enumerate(['t0', 'SNR', 'avg_fatigue', 'D1']):
         plt.subplot(2, 2, i+1)
@@ -159,14 +184,14 @@ def injury_analysis():
 
 
 def movement_amplitude():
-    df = get_subject_metrics()
+    df = pd.merge(get_subject_metrics(), get_traits_rapides_params(), left_on='id', right_on='subject_id')
     df['amplitude'] = df['D1'] - df['D2']
     sns.distplot(df['amplitude'].dropna()).set_title('Distribution of the movement amplitude')
     plt.show()
 
 
-def delta_log_linear_regressions(db_name='data/data_carabins.db'):
-    df = get_subject_metrics()
+def delta_log_linear_regressions(db_name=default_db_name):
+    df = get_traits_rapides_params()
     corr = df[['t0', 'D1', 'mu1', 'ss1', 'D2', 'mu2', 'ss2', 'SNR']].corr()
     mask = np.zeros_like(corr)
     mask[np.triu_indices_from(mask)] = True
@@ -186,7 +211,7 @@ def delta_log_linear_regressions(db_name='data/data_carabins.db'):
 
 def handwriting_stddev_analysis():
     metrics = get_subject_metrics()
-    hw_std = get_handwriting_stddev()
+    hw_std = get_trait_rapide_stddev()
     df = pd.merge(hw_std, metrics, on='id')
     corr = df[['t0_std', 'D1_std', 'mu1_std', 'ss1_std', 'D2_std', 'mu2_std', 'ss2_std', 'SNR_std']].corr()
     mask = np.zeros_like(corr)
@@ -198,8 +223,7 @@ def handwriting_stddev_analysis():
 
 
 def normality_test():
-    alpha = 0.1
-    df = get_subject_metrics()
+    df = pd.merge(get_subject_metrics(), get_traits_rapides_params(), left_on='id', right_on='subject_id')
     results = pd.DataFrame(columns=['variable', 'model', 'p-value'])
 
     for tested_var_name in ['t0', 'D1', 'mu1', 'ss1', 'D2', 'mu2', 'ss2', 'SNR']:
@@ -213,11 +237,12 @@ def normality_test():
     plt.show()
 
 
-def medical_outliers(threshold=3):
+def find_outliers(threshold=3):
     from data_extraction.data_extraction import medical_traits, delta_log_params
     result = pd.DataFrame(columns=['subject_id', 'variable', 'z-score'])
+    all_data = pd.merge(get_subject_metrics(), get_traits_rapides_params(), left_on='id', right_on='subject_id')
     for var in medical_traits + delta_log_params:
-        df = get_subject_metrics()[['id'] + [var]].dropna()
+        df = all_data[['id'] + [var]].dropna()
         search_data = df[var]
         z = np.abs(stats.zscore(search_data))
         indexes = np.where(z > threshold)
@@ -231,7 +256,7 @@ def medical_outliers(threshold=3):
     print(result.to_string(index=False))
 
 
-def test_id_corr(db_name='data/data_carabins.db'):
+def test_id_corr(db_name=default_db_name):
     engine = create_engine('sqlite:///' + db_name)
     df = pd.read_sql_query("SELECT * FROM deltalog", con=engine.connect())
     corr = df[['t0', 'D1', 'mu1', 'ss1', 'D2', 'mu2', 'ss2', 'SNR']].corrwith(df['stroke_id'])
@@ -241,3 +266,85 @@ def test_id_corr(db_name='data/data_carabins.db'):
     ax.axhline(color='black', linewidth=0.5)
     plt.ylim(top=1, bottom=-1)
     plt.show()
+
+
+def post_exercise_deltalog(db_name=default_db_name):
+    engine = create_engine('sqlite:///' + db_name)
+    df = pd.read_sql_query('''SELECT 
+        subject_id,
+        AVG(t0) as t0,
+        AVG(D1) as D1,
+        AVG(mu1) as mu1,
+        AVG(ss1) as ss1,
+        AVG(D2) as D2,
+        AVG(mu2) as mu2,
+        AVG(ss2) as ss2,
+        AVG(SNR) as SNR,
+        post_exercise
+        from deltalog
+     where subject_id in (SELECT DISTINCT subject_id from deltalog where post_exercise is 1)
+     AND test_name='Traits_rapides_reaction_visuelle_simple'
+     GROUP BY subject_id, post_exercise
+    ''', con=engine.connect())
+    df['post_exercise'].replace(inplace=True, to_replace=0, value='pre')
+    df['post_exercise'].replace(inplace=True, to_replace=1, value='post')
+
+    fig = plt.figure()
+    fig.suptitle("Effect of exercice on Delta-lognormal parameters")
+    for i, variable in enumerate(['t0', 'SNR', 'D1', 'D2', 'mu1', 'mu2', 'ss1', 'ss2']):
+        ax = fig.add_subplot(2, 4, i+1)
+        sns.violinplot(x='post_exercise', y=variable, data=df, inner='point', cut=0, bw='silverman')
+        ax.set_xlabel('')
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
+    plt.show()
+
+
+def sigmalog_dist(db_name=default_db_name):
+    engine = create_engine('sqlite:///' + db_name)
+    sigmalog = pd.read_sql_query('''SELECT 
+        subject_id, AVG(nb_lognorm), AVG(SNR)
+        from sigmalog
+        where test_name is 'Traits_rapides_reaction_visuelle_simple'
+        group by subject_id
+        ''', con=engine.connect())
+    deltalog = get_traits_rapides_params()
+    df = pd.merge(sigmalog, deltalog, on='subject_id')
+    df = pd.merge(df, get_subject_metrics(), left_on='subject_id', right_on='id')
+    sns.distplot(df['AVG(nb_lognorm)'])
+    plt.show()
+    sns.scatterplot(data=df, x='AVG(nb_lognorm)', y='avg_fatigue')
+    plt.show()
+    return df
+
+
+def medical_asymetry(db_name=default_db_name):
+    engine = create_engine('sqlite:///' + db_name)
+    df = pd.read_sql_query('''SELECT subject_id,
+     ((hop_d1+hop_d2)/2 - (hop_g1+hop_g2)/2) as hop_diff,
+     ((hop3_d1+hop3_d2)/2 - (hop3_g1+hop3_g2)/2) as hop3_diff,
+     ((hop3_cr_d1+hop3_cr_d2)/2 - (hop3_cr_g1+hop3_cr_g2)/2) as hop3_cr_diff,
+     ((re_gh_d1+re_gh_d2)/2 - (re_gh_g1+re_gh_g2)/2) as re_gh_diff,
+     ((flex_d1+flex_d2)/2 - (flex_g1+flex_g2)/2) as flex_diff,
+     ((scap_d1+scap_d2)/2 - (scap_g1+scap_g2)/2) as scap_diff
+     from medical
+     ''', con=engine.connect()).dropna()
+    variables = ['hop_diff', 'hop3_diff', 'hop3_cr_diff', 're_gh_diff', 'flex_diff', 'scap_diff']
+
+    z_scores = stats.zscore(df[['re_gh_diff', 'flex_diff', 'scap_diff']])
+    df['upper_limb_avg_z_score'] = np.mean(z_scores, axis=1)
+
+    fig = plt.figure()
+    fig.suptitle("Asymétrie droite - gauche")
+    for i, variable in enumerate(variables):
+        plt.subplot(2, 3, i + 1)
+        sns.distplot(df[variable])
+        plt.axvline(0, 0, 1, color='black', linewidth=0.5)  # vertical line at 0
+    plt.tight_layout(rect=[0, 0, 1, 0.95])
+    plt.show()
+
+    ax = sns.distplot(df['upper_limb_avg_z_score'])
+    ax.text(2.5, 0.5, 'Fort droite', fontsize=15, horizontalalignment='center')  # add text
+    ax.text(-2.5, 0.5, 'Fort gauche', fontsize=15, horizontalalignment='center')  # add text
+    plt.show()
+
+    return df

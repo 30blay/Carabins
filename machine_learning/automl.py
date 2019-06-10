@@ -1,8 +1,11 @@
 from auto_ml import Predictor
 from data_extraction.analysis import get_subject_metrics
 from sklearn.model_selection import train_test_split
+import pandas as pd
 
-df = get_subject_metrics()[[
+all_data = pd.merge(get_subject_metrics(), get_traits_rapides_params(), left_on='id', right_on='subject_id')
+
+df = all_data[[
     't0',
     'D1',
     'mu1',
