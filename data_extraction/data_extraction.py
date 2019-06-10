@@ -103,7 +103,7 @@ def subject_dir_gen(path):
         yield(subject_id, subject_dir)
 
 
-def extract_deltalog(session, path='data/Baseline', post_exercice=False):
+def extract_deltalog(session, path='data/Baseline', post_exercise=False):
     for (subject_id, subject_dir) in subject_dir_gen(path=path + '/Delta'):
         subject = Subject(subject_id=subject_id)
         session.merge(subject)  # no error if already exists
@@ -130,7 +130,7 @@ def extract_deltalog(session, path='data/Baseline', post_exercice=False):
                     subject_id=subject_id,
                     test_name=test_name,
                     stroke_id=stroke_id,
-                    post_exercice=post_exercice,
+                    post_exercise=post_exercise,
                     t0=row['t0'],
                     D1=row['D1'],
                     mu1=row['mu1'],
@@ -144,7 +144,7 @@ def extract_deltalog(session, path='data/Baseline', post_exercice=False):
     session.commit()
 
 
-def extract_sigmalog(session, path='data/Baseline', post_exercice=False):
+def extract_sigmalog(session, path='data/Baseline', post_exercise=False):
     for (subject_id, subject_dir) in subject_dir_gen(path=path + '/Sigma'):
         subject = Subject(subject_id=subject_id)
         session.merge(subject)  # no error if already exists
@@ -171,7 +171,7 @@ def extract_sigmalog(session, path='data/Baseline', post_exercice=False):
                     subject_id=subject_id,
                     test_name=test_name,
                     stroke_id=stroke_id,
-                    post_exercice=post_exercice,
+                    post_exercise=post_exercise,
                     version=header.iat[0, 1],
                     nb_lognorm=header.iat[1, 1],
                     SNR=header.iat[2, 1],
@@ -241,10 +241,10 @@ def create_db(db_name='data/carabins_data.db'):
 
     extract_fatigue(session)
     extract_medical(session)
-    extract_deltalog(session, path='data/Baseline', post_exercice=False)
-    extract_deltalog(session, path='data/Post_pratique', post_exercice=True)
-    extract_sigmalog(session, path='data/Baseline', post_exercice=False)
-    extract_sigmalog(session, path='data/Post_pratique', post_exercice=True)
+    extract_deltalog(session, path='data/Baseline', post_exercise=False)
+    extract_deltalog(session, path='data/Post_pratique', post_exercise=True)
+    extract_sigmalog(session, path='data/Baseline', post_exercise=False)
+    extract_sigmalog(session, path='data/Post_pratique', post_exercise=True)
     apply_filters(session,
                   null_fatigue=True,
                   null_handwriting=True,

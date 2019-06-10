@@ -14,5 +14,6 @@ if __name__ == '__main__':
     # normality_test()
     # find_outliers()
     # test_id_corr()
-    # post_exercice_deltalog()
-    df = medical_asymetry()
+    # post_exercise_deltalog()
+    # df = medical_asymetry()
+    df = sigmalog_dist()

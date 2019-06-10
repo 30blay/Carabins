@@ -39,11 +39,11 @@ def get_traits_rapides_params(db_name=default_db_name):
             AVG(D2) as D2,
             AVG(mu2) as mu2,
             AVG(ss2) as ss2,
-            AVG(SNR) as SNR
-
+            AVG(SNR) as SNR,
+            post_exercise
             FROM deltalog 
             WHERE test_name is 'Traits_rapides_reaction_visuelle_simple' 
-            GROUP BY subject_id
+            GROUP BY subject_id, post_exercise
             """, con=engine.connect())
 
     return df
@@ -268,7 +268,7 @@ def test_id_corr(db_name=default_db_name):
     plt.show()
 
 
-def post_exercice_deltalog(db_name=default_db_name):
+def post_exercise_deltalog(db_name=default_db_name):
     engine = create_engine('sqlite:///' + db_name)
     df = pd.read_sql_query('''SELECT 
         subject_id,
@@ -280,20 +280,20 @@ def post_exercice_deltalog(db_name=default_db_name):
         AVG(mu2) as mu2,
         AVG(ss2) as ss2,
         AVG(SNR) as SNR,
-        post_exercice
+        post_exercise
         from deltalog
-     where subject_id in (SELECT DISTINCT subject_id from deltalog where post_exercice is 1)
+     where subject_id in (SELECT DISTINCT subject_id from deltalog where post_exercise is 1)
      AND test_name='Traits_rapides_reaction_visuelle_simple'
-     GROUP BY subject_id, post_exercice
+     GROUP BY subject_id, post_exercise
     ''', con=engine.connect())
-    df['post_exercice'].replace(inplace=True, to_replace=0, value='pre')
-    df['post_exercice'].replace(inplace=True, to_replace=1, value='post')
+    df['post_exercise'].replace(inplace=True, to_replace=0, value='pre')
+    df['post_exercise'].replace(inplace=True, to_replace=1, value='post')
 
     fig = plt.figure()
     fig.suptitle("Effect of exercice on Delta-lognormal parameters")
     for i, variable in enumerate(['t0', 'SNR', 'D1', 'D2', 'mu1', 'mu2', 'ss1', 'ss2']):
         ax = fig.add_subplot(2, 4, i+1)
-        sns.violinplot(x='post_exercice', y=variable, data=df, inner='point', cut=0, bw='silverman')
+        sns.violinplot(x='post_exercise', y=variable, data=df, inner='point', cut=0, bw='silverman')
         ax.set_xlabel('')
     plt.tight_layout(rect=[0, 0, 1, 0.95])
     plt.show()
